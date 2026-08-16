@@ -1,0 +1,37 @@
+name: Build VS Code Extension VSIX
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'vscode-extension/**'
+      - '.github/workflows/build-vsix.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./vscode-extension
+        run: npm install
+
+      - name: Package VSIX
+        working-directory: ./vscode-extension
+        run: npx @vscode/vsce package --no-git-tag-version
+
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: vscode-extension/*.vsix
+          retention-days: 14

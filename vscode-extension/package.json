@@ -1,0 +1,70 @@
+{
+  "name": "gemini-web-orchestrated-agent",
+  "displayName": "Gemini Web Orchestrated Agent",
+  "description": "Embedded WebSocket Bridge Server & Autonomous Coding Executor for Gemini Web UI",
+  "version": "1.1.0",
+  "publisher": "gemini-agent",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "geminiAgent.startServer",
+        "title": "Gemini Agent: Connect Bridge Server"
+      },
+      {
+        "command": "geminiAgent.stopServer",
+        "title": "Gemini Agent: Disconnect Bridge Server"
+      },
+      {
+        "command": "geminiAgent.restartServer",
+        "title": "Gemini Agent: Restart Bridge Server"
+      },
+      {
+        "command": "geminiAgent.toggleServer",
+        "title": "Gemini Agent: Manage Bridge Server"
+      },
+      {
+        "command": "geminiAgent.showLogs",
+        "title": "Gemini Agent: Show Output Channel"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Gemini Web Agent",
+      "properties": {
+        "geminiAgent.serverPort": {
+          "type": "number",
+          "default": 9999,
+          "description": "Port on which the embedded WebSocket Bridge Server listens"
+        },
+        "geminiAgent.autoStartServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically launch the embedded Bridge Server on VS Code startup"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "postinstall": "npm run compile",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build": "npm run compile",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@types/ws": "^8.5.10",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Universal Web AI Agent Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="header">
+    <h2>🤖 Universal Web AI Agent <span class="badge">v2.0</span></h2>
+    <span style="font-size: 11px; color: #94a3b8;">Multi-Platform & Enterprise LLM</span>
+  </div>
+
+  <div id="toast" class="toast">설정이 저장되었습니다!</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="general">⚙️ 기본 설정</button>
+    <button class="tab-btn" data-tab="custom-llm">🏢 사내 Custom LLM 매핑</button>
+    <button class="tab-btn" data-tab="guide">📖 DOM 주입 가이드</button>
+  </div>
+
+  <!-- Tab 1: General Settings -->
+  <div id="tab-general" class="tab-content active">
+    <div class="card">
+      <div class="card-title">🔌 WebSocket Bridge 서버 연결</div>
+      <div class="form-group">
+        <label>VS Code 내장 WebSocket Server URL</label>
+        <input type="text" id="wsUrl" value="ws://localhost:9999" placeholder="ws://localhost:9999 또는 ws://localhost:3000/ws" />
+        <span class="help-text">VS Code Extension 또는 로컬 Bridge Server 포트 (:9999 또는 :3000/ws)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ 도구 실행 승인 정책 (Approval Policy)</div>
+      <div class="radio-group">
+        <label class="radio-item">
+          <input type="radio" name="approvalPolicy" value="safety" checked />
+          <div>
+            <span style="font-weight: 600; color: #38bdf8;">🛡️ Safety Guard (권장)</span>
+            <span class="radio-desc">파일 조회(read/list)는 자동 실행, 파일 변경(edit/write) 및 터미널 실행은 승인 후 실행</span>
+          </div>
+        </label>
+
+        <label class="radio-item">
+          <input type="radio" name="approvalPolicy" value="full-auto" />
+          <div>
+            <span style="font-weight: 600; color: #f59e0b;">⚡ Full Auto (완전 자율 실행)</span>
+            <span class="radio-desc">모든 도구 호출(수정, 생성, 터미널)을 승인 없이 즉시 자율 실행</span>
+          </div>
+        </label>
+
+        <label class="radio-item">
+          <input type="radio" name="approvalPolicy" value="read-only" />
+          <div>
+            <span style="font-weight: 600; color: #94a3b8;">🔒 Read Only (읽기 전용)</span>
+            <span class="radio-desc">파일 읽기 및 목록 조회만 허용하고 수정 및 실행 명령은 차단</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ 자동화 옵션</div>
+      <label class="radio-item">
+        <input type="checkbox" id="autoSubmitResult" checked />
+        <div>
+          <span style="font-weight: 600;">도구 실행 결과(tool_result) 자동 전송</span>
+          <span class="radio-desc">VS Code 실행 결과가 반환되면 자동으로 채팅창에 결과가 입력되고 Enter가 전송됩니다.</span>
+        </div>
+      </label>
+    </div>
+  </div>
+
+  <!-- Tab 2: Enterprise Custom LLM Mapping -->
+  <div id="tab-custom-llm" class="tab-content">
+    <div class="card">
+      <div class="card-title">
+        <span>🏢 사내 커스텀 LLM 웹 챗 DOM 매핑</span>
+        <button type="button" id="loadPresetBtn" class="secondary-btn">프리셋 불러오기 ▾</button>
+      </div>
+
+      <div class="form-group">
+        <label>프리셋 선택 (인기 사내 웹 챗 템플릿)</label>
+        <select id="presetSelect">
+          <option value="custom">-- 직접 커스텀 입력 --</option>
+          <option value="openwebui">Open WebUI (Ollama / VLLM / TGI)</option>
+          <option value="librechat">LibreChat</option>
+          <option value="dify">Dify.ai Chat App</option>
+          <option value="fastgpt">FastGPT</option>
+          <option value="chainlit">Chainlit</option>
+          <option value="nextchat">NextChat (ChatGPT-Next-Web)</option>
+          <option value="react-enterprise">사내 자체 React/Vue 포털 (표준)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>적용 대상 URL 패턴 (정규식 또는 와일드카드)</label>
+        <input type="text" id="customUrlPattern" placeholder="*://chat.mycompany.internal/*, localhost:*" />
+        <span class="help-text">예: <span class="code-pill">*.mycompany.internal/*</span> 또는 <span class="code-pill">localhost:3000/*</span></span>
+      </div>
+
+      <div class="form-group">
+        <label>1. 프롬프트 입력창 선택자 (Input Selector)</label>
+        <input type="text" id="customInputSelector" placeholder="textarea, #chat-input, div[contenteditable='true']" />
+        <span class="help-text">텍스트를 입력할 textarea 또는 contenteditable 요소의 CSS 선택자</span>
+      </div>
+
+      <div class="form-group">
+        <label>2. 전송 버튼 선택자 (Send Button Selector)</label>
+        <input type="text" id="customSendSelector" placeholder="button[type='submit'], #send-btn, button[aria-label*='Send']" />
+        <span class="help-text">입력 후 클릭할 전송 버튼의 CSS 선택자</span>
+      </div>
+
+      <div class="form-group">
+        <label>3. 모델 답변 메시지 컨테이너 선택자 (Assistant Message Selector)</label>
+        <input type="text" id="customMessageSelector" placeholder=".chat-message-assistant, div[data-role='assistant'], .bot-message" />
+        <span class="help-text">LLM의 JSON 도구 호출(tool_call)을 감지할 답변 박스 선택자</span>
+      </div>
+
+      <div class="form-group">
+        <label>4. 입력 주입 방식 (Injection Strategy)</label>
+        <select id="customInjectionMode">
+          <option value="react-setter">React State Tracker Setter (React 16+ 필수 추천)</option>
+          <option value="standard-input">Standard Value + InputEvent (Vue / 일반 Textarea)</option>
+          <option value="contenteditable-paste">ContentEditable Paste Simulation (Rich Text / Quill)</option>
+        </select>
+        <span class="help-text">React 기반 웹 챗은 <span class="code-pill">React State Tracker Setter</span>를 사용해야 상태가 업데이트됩니다.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: DOM Injection Developer Guide -->
+  <div id="tab-guide" class="tab-content">
+    <div class="card">
+      <div class="card-title">💡 사내 웹 챗 연동 원리 핵심 요약</div>
+      <p class="help-text">
+        사내 LLM 웹 챗과 VS Code Agent를 연결할 때 발생하는 가장 흔한 문제는 <b>"DOM에 텍스트를 넣어도 전송 버튼이 활성화되지 않거나 React 상태가 갱신되지 않는 현상"</b>입니다.
+      </p>
+
+      <div style="background:#0f172a; padding:10px; border-radius:6px; font-size:11px; line-height:1.5;">
+        <b style="color:#38bdf8;">1. React Input Value Tracker 해결법:</b><br/>
+        React 16+는 <code class="code-pill">input.value = 'text'</code>를 가로챕니다. 따라서 아래 프로토타입 세터를 호출해야 React가 변경을 감지합니다:<br/>
+        <code style="color:#a7f3d0; display:block; margin:4px 0; word-break:break-all;">
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;<br/>
+          setter.call(textarea, text);<br/>
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        </code>
+      </div>
+
+      <div style="background:#0f172a; padding:10px; border-radius:6px; font-size:11px; line-height:1.5; margin-top:8px;">
+        <b style="color:#f59e0b;">2. 원클릭 Element Picker:</b><br/>
+        웹 페이지 우측 하단에 뜨는 <b>VS Code Agent HUD</b>에서 <b>[🎯 DOM 선택기]</b>를 클릭한 후, 브라우저 화면의 입력창과 답변 박스를 클릭하면 자동으로 선택자가 등록됩니다!
+      </div>
+    </div>
+  </div>
+
+  <button id="saveBtn" class="primary-btn">💾 모든 설정 저장</button>
+
+  <script src="options.js"></script>
+</body>
+</html>
