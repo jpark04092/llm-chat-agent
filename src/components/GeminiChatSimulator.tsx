@@ -211,7 +211,7 @@ export const GeminiChatSimulator: React.FC<GeminiChatSimulatorProps> = ({
             </div>
             <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl flex items-center gap-2 text-xs text-slate-400">
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-              <span>Gemini is generating response and analyzing workspace...</span>
+              <span>Web AI Agent is analyzing workspace and formulating tool execution...</span>
             </div>
           </div>
         )}
@@ -239,7 +239,7 @@ export const GeminiChatSimulator: React.FC<GeminiChatSimulatorProps> = ({
           type="text"
           value={inputPrompt}
           onChange={(e) => setInputPrompt(e.target.value)}
-          placeholder="Ask Gemini to inspect, write files or execute commands in VS Code..."
+          placeholder="Ask Web AI (ChatGPT, Claude, Gemini, etc.) to inspect, write files or execute commands in VS Code..."
           disabled={isSending}
           className="flex-1 bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all"
         />

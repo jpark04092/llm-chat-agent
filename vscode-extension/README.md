@@ -19,11 +19,11 @@ VS Code에서 `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`)를 누른 뒤 **`AI Agent:`*
 
 | 명령어 (Title) | Command ID | 설명 |
 | :--- | :--- | :--- |
-| **`AI Agent: Connect Bridge Server`** | `geminiAgent.startServer` | 내장 WebSocket 브리지 서버를 시작하고 포트(기본 9999)에서 연결을 대기합니다. |
-| **`AI Agent: Disconnect Bridge Server`** | `geminiAgent.stopServer` | 실행 중인 브리지 서버를 안전하게 중지하고 연결을 해제합니다. |
-| **`AI Agent: Restart Bridge Server`** | `geminiAgent.restartServer` | 브리지 서버를 즉시 재시작하여 새로운 연결을 준비합니다. |
-| **`AI Agent: Manage Bridge Server`** | `geminiAgent.toggleServer` | 빠른 선택 메뉴(QuickPick)를 열어 현재 상태에 맞춰 연결/중지/재시작/로그 보기를 한눈에 선택합니다. |
-| **`AI Agent: Show Output Channel`** | `geminiAgent.showLogs` | 'Universal Web AI Agent' 전용 출력(Output) 창을 열어 브리지 통신 및 도구 실행 로그를 실시간으로 확인합니다. |
+| **`AI Agent: Connect Bridge Server`** | `webAgent.startServer` | 내장 WebSocket 브리지 서버를 시작하고 포트(기본 9999)에서 연결을 대기합니다. |
+| **`AI Agent: Disconnect Bridge Server`** | `webAgent.stopServer` | 실행 중인 브리지 서버를 안전하게 중지하고 연결을 해제합니다. |
+| **`AI Agent: Restart Bridge Server`** | `webAgent.restartServer` | 브리지 서버를 즉시 재시작하여 새로운 연결을 준비합니다. |
+| **`AI Agent: Manage Bridge Server`** | `webAgent.toggleServer` | 빠른 선택 메뉴(QuickPick)를 열어 현재 상태에 맞춰 연결/중지/재시작/로그 보기를 한눈에 선택합니다. |
+| **`AI Agent: Show Output Channel`** | `webAgent.showLogs` | 'Universal Web AI Agent' 전용 출력(Output) 창을 열어 브리지 통신 및 도구 실행 로그를 실시간으로 확인합니다. |
 
 ### 📌 상태 표시줄 (Status Bar) 빠른 제어
 - VS Code 우측 하단 상태 표시줄에 현재 서버 상태와 접속된 클라이언트 수가 실시간 표시됩니다:
@@ -32,17 +32,17 @@ VS Code에서 `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`)를 누른 뒤 **`AI Agent:`*
 - 상태 표시줄 항목을 클릭하면 `AI Agent: Manage Bridge Server` QuickPick 메뉴가 즉시 나타납니다.
 
 ## ⚙️ 확장 프로그램 설정 (Configuration)
-VS Code 설정(`Ctrl+,` / `Cmd+,`)에서 `Universal Web AI Agent` 또는 `Gemini Agent`를 검색하거나 `settings.json`에서 다음 설정을 변경할 수 있습니다:
+VS Code 설정(`Ctrl+,` / `Cmd+,`)에서 `Universal Web AI Agent`를 검색하거나 `settings.json`에서 다음 설정을 변경할 수 있습니다:
 
 ```json
 {
-  "geminiAgent.serverPort": 9999,
-  "geminiAgent.autoStartServer": false
+  "webAgent.serverPort": 9999,
+  "webAgent.autoStartServer": false
 }
 ```
 
-- **`geminiAgent.serverPort`** (기본값: `9999`): 내장 WebSocket 브리지 서버가 수신 대기할 포트 번호입니다.
-- **`geminiAgent.autoStartServer`** (기본값: `false`): `true`로 설정 시 VS Code가 열릴 때 브리지 서버를 자동으로 시작합니다.
+- **`webAgent.serverPort`** (기본값: `9999`): 내장 WebSocket 브리지 서버가 수신 대기할 포트 번호입니다.
+- **`webAgent.autoStartServer`** (기본값: `false`): `true`로 설정 시 VS Code가 열릴 때 브리지 서버를 자동으로 시작합니다.
 
 ## ⚡ 지원 도구 (Tool Commands)
 - `file:read`: 파일 읽기 (`{"path": "..."}`)

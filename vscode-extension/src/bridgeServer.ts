@@ -196,18 +196,18 @@ export class EmbeddedBridgeServer {
           this.isRunning = false;
           this.outputChannel.appendLine(`[BRIDGE SERVER ERROR] ${err.message}`);
           if (err.code === 'EADDRINUSE') {
-            vscode.window.showErrorMessage(`Gemini Bridge Server: Port ${this.port} is already in use by another process.`);
+            vscode.window.showErrorMessage(`AI Agent Bridge Server: Port ${this.port} is already in use by another process.`);
           } else {
-            vscode.window.showErrorMessage(`Gemini Bridge Server Error: ${err.message}`);
+            vscode.window.showErrorMessage(`AI Agent Bridge Server Error: ${err.message}`);
           }
-          this.updateStatus('stopped', '$(error) Gemini Bridge: Port Error');
+          this.updateStatus('stopped', '$(error) AI Agent Bridge: Port Error');
           resolve(false);
         });
 
       } catch (err: any) {
         this.isRunning = false;
         this.outputChannel.appendLine(`[BRIDGE SERVER INIT ERROR] ${err.message}`);
-        this.updateStatus('stopped', '$(error) Gemini Bridge: Stopped');
+        this.updateStatus('stopped', '$(error) AI Agent Bridge: Stopped');
         resolve(false);
       }
     });
@@ -274,7 +274,7 @@ export class EmbeddedBridgeServer {
     const icon = isStalledWarning ? '$(alert)' : '$(sync~spin)';
     const colorBadge = isStalledWarning ? '⚠️ Deadlock Check' : isLongRunning ? '⏳ Working...' : 'Busy';
 
-    this.statusBarItem.text = `${icon} Gemini: [${this.currentActiveCall.command}] ${elapsedSec}s (${colorBadge})`;
+    this.statusBarItem.text = `${icon} AI Agent: [${this.currentActiveCall.command}] ${elapsedSec}s (${colorBadge})`;
     this.statusBarItem.tooltip = isStalledWarning
       ? `Task has been running for ${elapsedSec}s. Check if terminal/process is waiting for input or deadlocked.`
       : `Executing ${this.currentActiveCall.command} (${elapsedSec}s elapsed). Phase: ${this.currentActiveCall.phase || 'Working'}`;
@@ -301,7 +301,7 @@ export class EmbeddedBridgeServer {
       this.stopHeartbeatTimer();
       if (!this.wss) {
         this.isRunning = false;
-        this.updateStatus('stopped', '$(circle-slash) Gemini Bridge: Stopped');
+        this.updateStatus('stopped', '$(circle-slash) AI Agent Bridge: Stopped');
         resolve();
         return;
       }
@@ -318,8 +318,8 @@ export class EmbeddedBridgeServer {
         this.isRunning = false;
         this.wss = null;
         this.outputChannel.appendLine('[BRIDGE SERVER] WebSocket server stopped.');
-        this.updateStatus('stopped', '$(circle-slash) Gemini Bridge: Stopped');
-        vscode.window.showInformationMessage('Gemini Agent: Bridge Server stopped.');
+        this.updateStatus('stopped', '$(circle-slash) AI Agent Bridge: Stopped');
+        vscode.window.showInformationMessage('AI Agent: Bridge Server stopped.');
         resolve();
       });
     });

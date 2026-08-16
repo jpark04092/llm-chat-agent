@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Extension (Gemini Agent)",
+      "name": "Run Extension (Universal Web AI Agent)",
       "type": "extensionHost",
       "request": "launch",
       "args": [

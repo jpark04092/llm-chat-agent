@@ -12,23 +12,23 @@
   "contributes": {
     "commands": [
       {
-        "command": "geminiAgent.startServer",
+        "command": "webAgent.startServer",
         "title": "AI Agent: Connect Bridge Server"
       },
       {
-        "command": "geminiAgent.stopServer",
+        "command": "webAgent.stopServer",
         "title": "AI Agent: Disconnect Bridge Server"
       },
       {
-        "command": "geminiAgent.restartServer",
+        "command": "webAgent.restartServer",
         "title": "AI Agent: Restart Bridge Server"
       },
       {
-        "command": "geminiAgent.toggleServer",
+        "command": "webAgent.toggleServer",
         "title": "AI Agent: Manage Bridge Server"
       },
       {
-        "command": "geminiAgent.showLogs",
+        "command": "webAgent.showLogs",
         "title": "AI Agent: Show Output Channel"
       }
     ],
@@ -36,12 +36,12 @@
       "type": "object",
       "title": "Universal Web AI Agent",
       "properties": {
-        "geminiAgent.serverPort": {
+        "webAgent.serverPort": {
           "type": "number",
           "default": 9999,
           "description": "Port on which the embedded WebSocket Bridge Server listens"
         },
-        "geminiAgent.autoStartServer": {
+        "webAgent.autoStartServer": {
           "type": "boolean",
           "default": false,
           "description": "Automatically launch the embedded Bridge Server on VS Code startup"

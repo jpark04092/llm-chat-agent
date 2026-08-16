@@ -235,7 +235,7 @@ export class CommandExecutor {
   private async handleFileList(relativePath?: string) {
     const uri = this.resolveUri(relativePath || '.');
     const entries = await vscode.workspace.fs.readDirectory(uri);
-    return entries.map(([name, type]) => ({ name, type }));
+    return entries.map(([name, type]: [string, vscode.FileType]) => ({ name, type }));
   }
 
   private async handleNpmRun(scriptName?: string, activeInfo?: ActiveExecution): Promise<string> {
@@ -251,7 +251,7 @@ export class CommandExecutor {
   private executeShellCommand(commandLine: string, activeInfo?: ActiveExecution): Promise<string> {
     const root = this.getWorkspaceRoot();
     if (!this.agentTerminal || this.agentTerminal.exitStatus !== undefined) {
-      this.agentTerminal = vscode.window.createTerminal('Gemini Agent');
+      this.agentTerminal = vscode.window.createTerminal('AI Agent');
     }
     this.agentTerminal.show(true);
     this.agentTerminal.sendText(commandLine);
