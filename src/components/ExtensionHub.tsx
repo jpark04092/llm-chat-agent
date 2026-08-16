@@ -13,9 +13,18 @@ import {
   Check,
   Play,
   Terminal,
-  Cpu
+  Cpu,
+  Globe,
+  Plus,
+  Trash2,
+  Edit2,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  Power
 } from 'lucide-react';
-import { ApprovalPolicy } from '../types';
+import { ApprovalPolicy, PresetSiteItem, CustomSiteItem } from '../types';
 
 interface ExtensionHubProps {
   onDownloadChromeZip: () => void;
@@ -24,7 +33,103 @@ interface ExtensionHubProps {
   setApprovalPolicy: (policy: ApprovalPolicy) => void;
 }
 
-const PRESETS = [
+const INITIAL_PRESETS: PresetSiteItem[] = [
+  {
+    id: 'gemini',
+    name: 'Google Gemini & AI Studio',
+    tag: 'Official',
+    tagClass: 'official',
+    urlDisplay: 'gemini.google.com, aistudio.google.com',
+    urlPatterns: ['gemini.google.com', 'aistudio.google.com'],
+    defaultEnabled: true,
+    enabled: true,
+  },
+  {
+    id: 'chatgpt',
+    name: 'OpenAI ChatGPT',
+    tag: 'Official',
+    tagClass: 'official',
+    urlDisplay: 'chatgpt.com, chat.openai.com',
+    urlPatterns: ['chatgpt.com', 'chat.openai.com'],
+    defaultEnabled: true,
+    enabled: true,
+  },
+  {
+    id: 'claude',
+    name: 'Anthropic Claude.ai',
+    tag: 'Official',
+    tagClass: 'official',
+    urlDisplay: 'claude.ai',
+    urlPatterns: ['claude.ai'],
+    defaultEnabled: true,
+    enabled: true,
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek Chat',
+    tag: 'Popular',
+    tagClass: 'popular',
+    urlDisplay: 'chat.deepseek.com',
+    urlPatterns: ['chat.deepseek.com'],
+    defaultEnabled: true,
+    enabled: true,
+  },
+  {
+    id: 'openwebui',
+    name: 'Open WebUI (Ollama / Local LLM)',
+    tag: 'Self-Hosted',
+    tagClass: 'self-hosted',
+    urlDisplay: 'localhost:8080, *openwebui*',
+    urlPatterns: ['localhost:8080', '*openwebui*'],
+    defaultEnabled: true,
+    enabled: true,
+  },
+  {
+    id: 'librechat',
+    name: 'LibreChat',
+    tag: 'Self-Hosted',
+    tagClass: 'self-hosted',
+    urlDisplay: 'localhost:3080, *librechat*',
+    urlPatterns: ['localhost:3080', '*librechat*'],
+    defaultEnabled: false,
+    enabled: false,
+  },
+  {
+    id: 'dify',
+    name: 'Dify.ai Chat App',
+    tag: 'Self-Hosted',
+    tagClass: 'self-hosted',
+    urlDisplay: 'cloud.dify.ai, *dify*',
+    urlPatterns: ['cloud.dify.ai', '*dify*'],
+    defaultEnabled: false,
+    enabled: false,
+  },
+];
+
+const INITIAL_CUSTOM_SITES: CustomSiteItem[] = [
+  {
+    id: 'custom_1',
+    name: '사내 Custom LLM 웹 챗',
+    urlPattern: '*://*.internal/*, *://chat.corp.*',
+    enabled: true,
+    inputSelector: 'textarea, div[contenteditable="true"][role="textbox"], input[type="text"]',
+    sendSelector: 'button[type="submit"], button[aria-label*="send" i], button.send-btn',
+    messageSelector: '.assistant-message, .bot-message, div[data-role="assistant"], pre, code-block',
+    injectionMode: 'react-setter',
+  },
+  {
+    id: 'custom_2',
+    name: '로컬 시뮬레이터 (Local Dev)',
+    urlPattern: 'localhost:3000*, 127.0.0.1:3000*',
+    enabled: false,
+    inputSelector: 'textarea',
+    sendSelector: 'button',
+    messageSelector: '.message',
+    injectionMode: 'react-setter',
+  },
+];
+
+const PRESETS_DETAILS = [
   {
     id: 'gemini',
     name: 'Google Gemini & AI Studio',
@@ -103,10 +208,168 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
   approvalPolicy,
   setApprovalPolicy,
 }) => {
-  const [activeTab, setActiveTab] = useState<'downloads' | 'custom-llm' | 'dom-guide'>('downloads');
+  const [activeTab, setActiveTab] = useState<'sites' | 'downloads' | 'custom-llm' | 'dom-guide'>('sites');
+  const [presets, setPresets] = useState<PresetSiteItem[]>(INITIAL_PRESETS);
+  const [customSites, setCustomSites] = useState<CustomSiteItem[]>(INITIAL_CUSTOM_SITES);
+  
+  // Custom Site Form State
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
+  const [formName, setFormName] = useState('');
+  const [formUrlPattern, setFormUrlPattern] = useState('');
+  const [formInputSelector, setFormInputSelector] = useState('');
+  const [formSendSelector, setFormSendSelector] = useState('');
+  const [formMessageSelector, setFormMessageSelector] = useState('');
+  const [formInjectionMode, setFormInjectionMode] = useState<'react-setter' | 'standard-input' | 'contenteditable-paste'>('react-setter');
+  const [showAdvancedSelectors, setShowAdvancedSelectors] = useState(false);
+
+  // Live URL Tester State
+  const [testUrlInput, setTestUrlInput] = useState('https://gemini.google.com/app');
   const [testInput, setTestInput] = useState('');
   const [testLog, setTestLog] = useState<string[]>([]);
-  const [selectedPreset, setSelectedPreset] = useState(PRESETS[0]);
+  const [selectedPreset, setSelectedPreset] = useState(PRESETS_DETAILS[0]);
+
+  // Toggle Preset
+  const handleTogglePreset = (id: string) => {
+    setPresets((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, enabled: !p.enabled } : p))
+    );
+  };
+
+  // Toggle Custom Site
+  const handleToggleCustomSite = (id: string) => {
+    setCustomSites((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s))
+    );
+  };
+
+  // Delete Custom Site
+  const handleDeleteCustomSite = (id: string) => {
+    setCustomSites((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  // Open Edit Form
+  const handleOpenEdit = (site: CustomSiteItem) => {
+    setEditingSiteId(site.id);
+    setFormName(site.name);
+    setFormUrlPattern(site.urlPattern);
+    setFormInputSelector(site.inputSelector || '');
+    setFormSendSelector(site.sendSelector || '');
+    setFormMessageSelector(site.messageSelector || '');
+    setFormInjectionMode(site.injectionMode || 'react-setter');
+    setShowAdvancedSelectors(Boolean(site.inputSelector || site.sendSelector || site.messageSelector));
+    setShowCustomForm(true);
+  };
+
+  // Open Add Form
+  const handleOpenAdd = () => {
+    setEditingSiteId(null);
+    setFormName('');
+    setFormUrlPattern('');
+    setFormInputSelector('');
+    setFormSendSelector('');
+    setFormMessageSelector('');
+    setFormInjectionMode('react-setter');
+    setShowAdvancedSelectors(false);
+    setShowCustomForm(true);
+  };
+
+  // Save Custom Site Form
+  const handleSaveCustomForm = () => {
+    if (!formName.trim() || !formUrlPattern.trim()) return;
+
+    if (editingSiteId) {
+      setCustomSites((prev) =>
+        prev.map((s) =>
+          s.id === editingSiteId
+            ? {
+                ...s,
+                name: formName.trim(),
+                urlPattern: formUrlPattern.trim(),
+                inputSelector: formInputSelector.trim() || undefined,
+                sendSelector: formSendSelector.trim() || undefined,
+                messageSelector: formMessageSelector.trim() || undefined,
+                injectionMode: formInjectionMode,
+              }
+            : s
+        )
+      );
+    } else {
+      const newSite: CustomSiteItem = {
+        id: `custom_${Date.now()}`,
+        name: formName.trim(),
+        urlPattern: formUrlPattern.trim(),
+        enabled: true,
+        inputSelector: formInputSelector.trim() || undefined,
+        sendSelector: formSendSelector.trim() || undefined,
+        messageSelector: formMessageSelector.trim() || undefined,
+        injectionMode: formInjectionMode,
+      };
+      setCustomSites((prev) => [...prev, newSite]);
+    }
+    setShowCustomForm(false);
+  };
+
+  // Helper URL Matcher for Test Sandbox
+  const testUrlPermission = (urlToTest: string) => {
+    if (!urlToTest.trim()) return { allowed: false, reason: 'URL이 입력되지 않았습니다.' };
+
+    let parsedHostname = '';
+    try {
+      const u = new URL(urlToTest.startsWith('http') ? urlToTest : `https://${urlToTest}`);
+      parsedHostname = u.hostname;
+    } catch (e) {
+      parsedHostname = urlToTest.split('/')[0];
+    }
+
+    const matchPattern = (pattern: string, url: string, host: string) => {
+      const trimmed = pattern.trim();
+      if (host === trimmed || host.endsWith('.' + trimmed)) return true;
+      try {
+        const escaped = trimmed.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+        const regex = new RegExp(`^${escaped}$`, 'i');
+        return regex.test(url) || regex.test(host) || url.includes(trimmed);
+      } catch (e) {
+        return url.includes(trimmed);
+      }
+    };
+
+    // 1. Check Presets
+    for (const p of presets) {
+      if (p.enabled) {
+        const matched = p.urlPatterns.some((pattern) => matchPattern(pattern, urlToTest, parsedHostname));
+        if (matched) {
+          return { allowed: true, type: 'preset', name: p.name, reason: `프리셋 [${p.name}] 활성화 상태에 매칭됨` };
+        }
+      } else {
+        const matched = p.urlPatterns.some((pattern) => matchPattern(pattern, urlToTest, parsedHostname));
+        if (matched) {
+          return { allowed: false, type: 'preset-disabled', name: p.name, reason: `프리셋 [${p.name}] URL이나, 현재 [OFF]로 비활성화되어 차단됨` };
+        }
+      }
+    }
+
+    // 2. Check Custom Sites
+    for (const site of customSites) {
+      if (site.enabled && site.urlPattern) {
+        const patterns = site.urlPattern.split(',').map((s) => s.trim()).filter(Boolean);
+        const matched = patterns.some((pat) => matchPattern(pat, urlToTest, parsedHostname));
+        if (matched) {
+          return { allowed: true, type: 'custom', name: site.name, reason: `사내/추가 허용 URL [${site.name}] 패턴에 매칭됨` };
+        }
+      } else if (!site.enabled && site.urlPattern) {
+        const patterns = site.urlPattern.split(',').map((s) => s.trim()).filter(Boolean);
+        const matched = patterns.some((pat) => matchPattern(pat, urlToTest, parsedHostname));
+        if (matched) {
+          return { allowed: false, type: 'custom-disabled', name: site.name, reason: `사내 LLM [${site.name}] URL이나, 현재 [OFF] 상태임` };
+        }
+      }
+    }
+
+    return { allowed: false, reason: '허용 목록에 등록되지 않은 사이트입니다. HUD가 뜨지 않고 완전히 비활성화됩니다.' };
+  };
+
+  const testResult = testUrlPermission(testUrlInput);
 
   // Test DOM injection in sandbox
   const handleTestInject = (mode: string) => {
@@ -121,7 +384,19 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 flex-wrap">
+        <button
+          onClick={() => setActiveTab('sites')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'sites'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>🌐 작동 사이트 & URL 허용 관리 (On/Off)</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('downloads')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -131,7 +406,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
           }`}
         >
           <Download className="w-3.5 h-3.5" />
-          <span>패키지 다운로드 및 기본 설정</span>
+          <span>패키지 다운로드 및 실행</span>
         </button>
 
         <button
@@ -143,7 +418,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>🏢 사내 Custom LLM 매핑 & 어댑터 프리셋</span>
+          <span>🏢 사내 Custom LLM DOM 매핑</span>
         </button>
 
         <button
@@ -159,6 +434,347 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
         </button>
       </div>
 
+      {/* Tab 1: Allowed Sites & Preset On/Off URL Manager */}
+      {activeTab === 'sites' && (
+        <div className="space-y-6">
+          {/* Security & Clean HUD Info Banner */}
+          <div className="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-start gap-3">
+            <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl mt-0.5">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div className="text-xs space-y-1">
+              <h4 className="font-bold text-white">사이트 선택적 HUD 활성화 (URL Filtering & Allowlist)</h4>
+              <p className="text-slate-300 leading-relaxed">
+                현재 허용 목록에 등록되고 <b>[ON]</b>으로 켜져 있는 AI 웹 챗 사이트에서만 우측 하단에 VS Code Agent HUD가 표시됩니다.
+                포털, 뉴스, 이메일 등 <b>사용하지 않는 사이트에서는 HUD가 뜨지 않고 백그라운드 리소스 소모가 완전히 차단</b>됩니다.
+              </p>
+            </div>
+          </div>
+
+          {/* Preset Sites Toggle Section */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <span>기본 지원 LLM 프리셋 On/Off 토글</span>
+                </h3>
+                <span className="text-xs text-slate-400">자주 사용하는 AI 웹 서비스별 독립적 On/Off 스위치</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {presets.map((preset) => (
+                <div
+                  key={preset.id}
+                  className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+                    preset.enabled
+                      ? 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                      : 'bg-slate-950/40 border-slate-900 opacity-60'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-white truncate">{preset.name}</span>
+                      <span
+                        className={`text-[9.5px] px-1.5 py-0.5 rounded font-mono uppercase font-semibold ${
+                          preset.tagClass === 'official'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                            : preset.tagClass === 'popular'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        }`}
+                      >
+                        {preset.tag}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-mono text-indigo-300 truncate" title={preset.urlDisplay}>
+                      🔗 {preset.urlDisplay}
+                    </div>
+                  </div>
+
+                  {/* Toggle Button */}
+                  <button
+                    onClick={() => handleTogglePreset(preset.id)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      preset.enabled ? 'bg-emerald-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        preset.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Enterprise Sites Section */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-purple-400" />
+                  <span>추가 허용 URL 및 사내 LLM 목록 (Custom Allowed URLs)</span>
+                </h3>
+                <span className="text-xs text-slate-400">사내망 LLM 웹 챗 도메인을 등록하여 자유롭게 HUD를 활성화할 수 있습니다.</span>
+              </div>
+
+              <button
+                onClick={handleOpenAdd}
+                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-xl cursor-pointer shadow-md transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>새 사이트 / 사내 LLM 추가</span>
+              </button>
+            </div>
+
+            {/* Custom Site Form Modal/Box */}
+            {showCustomForm && (
+              <div className="bg-slate-950 border border-indigo-500/50 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <h4 className="text-xs font-bold text-indigo-300">
+                    {editingSiteId ? '✏️ 사내 허용 사이트 수정' : '➕ 새 허용 사이트 / 사내 LLM 등록'}
+                  </h4>
+                  <button
+                    onClick={() => setShowCustomForm(false)}
+                    className="text-slate-400 hover:text-white text-sm"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">사이트 / LLM 명칭</label>
+                    <input
+                      type="text"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder="예: 사내 엔터프라이즈 AI 챗봇"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      허용 URL 패턴 (와일드카드 및 콤마 구분)
+                    </label>
+                    <input
+                      type="text"
+                      value={formUrlPattern}
+                      onChange={(e) => setFormUrlPattern(e.target.value)}
+                      placeholder="*://chat.mycompany.internal/*, localhost:8080/*"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-mono text-indigo-300 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedSelectors(!showAdvancedSelectors)}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>⚙️ 고급 DOM 선택자 직접 지정 (선택 사항)</span>
+                    <span>{showAdvancedSelectors ? '▴' : '▾'}</span>
+                  </button>
+                </div>
+
+                {showAdvancedSelectors && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                    <div>
+                      <label className="text-[10.5px] text-slate-400 block mb-1">입력창 선택자 (Input)</label>
+                      <input
+                        type="text"
+                        value={formInputSelector}
+                        onChange={(e) => setFormInputSelector(e.target.value)}
+                        placeholder="textarea, #chat-input"
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-300 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10.5px] text-slate-400 block mb-1">전송 버튼 선택자 (Send)</label>
+                      <input
+                        type="text"
+                        value={formSendSelector}
+                        onChange={(e) => setFormSendSelector(e.target.value)}
+                        placeholder="button[type='submit'], #send-btn"
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-300 font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setShowCustomForm(false)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSaveCustomForm}
+                    className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer"
+                  >
+                    저장 및 적용
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Custom Sites List */}
+            <div className="space-y-2">
+              {customSites.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                  등록된 사내 LLM 사이트가 없습니다. [➕ 새 사이트 추가] 버튼을 눌러 추가하세요.
+                </div>
+              ) : (
+                customSites.map((site) => (
+                  <div
+                    key={site.id}
+                    className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+                      site.enabled
+                        ? 'bg-slate-950/80 border-slate-800'
+                        : 'bg-slate-950/40 border-slate-900 opacity-60'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-white truncate">{site.name}</span>
+                        <span className="text-[9.5px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono uppercase font-semibold">
+                          Custom
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-purple-300 truncate" title={site.urlPattern}>
+                        🌐 {site.urlPattern}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEdit(site)}
+                        className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800/80 hover:bg-slate-700 transition-all cursor-pointer"
+                        title="수정"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCustomSite(site.id)}
+                        className="p-1.5 text-red-400 hover:text-red-300 rounded bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 transition-all cursor-pointer"
+                        title="삭제"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Toggle Button */}
+                      <button
+                        onClick={() => handleToggleCustomSite(site.id)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          site.enabled ? 'bg-emerald-500' : 'bg-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            site.enabled ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Live URL Simulator / Tester */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Search className="w-4 h-4 text-emerald-400" />
+                  <span>실시간 URL 매칭 테스트 시뮬레이터 (Live URL Validator)</span>
+                </h3>
+                <span className="text-xs text-slate-400">
+                  접속할 웹 주소를 입력하면 현재 설정에 따라 HUD가 활성화될지 즉시 검증합니다.
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={testUrlInput}
+                  onChange={(e) => setTestUrlInput(e.target.value)}
+                  placeholder="테스트할 웹 사이트 URL (예: https://gemini.google.com/app, https://naver.com)"
+                  className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs font-mono text-white focus:outline-none"
+                />
+              </div>
+
+              {/* Quick Sample Buttons */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-400">
+                <span>빠른 샘플 테스트:</span>
+                <button
+                  onClick={() => setTestUrlInput('https://gemini.google.com/app')}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono"
+                >
+                  gemini.google.com
+                </button>
+                <button
+                  onClick={() => setTestUrlInput('https://chatgpt.com/c/123')}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono"
+                >
+                  chatgpt.com
+                </button>
+                <button
+                  onClick={() => setTestUrlInput('http://chat.mycompany.internal/workspace')}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-purple-300 font-mono"
+                >
+                  chat.mycompany.internal
+                </button>
+                <button
+                  onClick={() => setTestUrlInput('https://news.google.com')}
+                  className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 font-mono"
+                >
+                  news.google.com (차단 대상)
+                </button>
+              </div>
+
+              {/* Evaluation Result Card */}
+              <div
+                className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+                  testResult.allowed
+                    ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
+                    : 'bg-slate-950 border-slate-800 text-slate-400'
+                }`}
+              >
+                <div className="mt-0.5">
+                  {testResult.allowed ? (
+                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <ShieldAlert className="w-5 h-5 text-slate-500" />
+                  )}
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="font-bold flex items-center gap-2">
+                    <span>{testResult.allowed ? '🟢 [HUD 활성화]' : '⚪ [HUD 비활성화 (표시 안 됨)]'}</span>
+                    {testResult.name && (
+                      <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-white font-mono">
+                        {testResult.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11.5px] leading-relaxed">{testResult.reason}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'downloads' && (
         <>
           {/* Hero Action Cards */}
@@ -173,9 +789,9 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      Universal Chrome Extension <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">v2.0 Universal</span>
+                      Universal Chrome Extension <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">v2.1 Allowlist Edition</span>
                     </h3>
-                    <span className="text-xs text-indigo-400 font-medium">Multi-Platform + Enterprise Custom LLM Support</span>
+                    <span className="text-xs text-indigo-400 font-medium">Selective HUD Injection + URL Allowlist Controller</span>
                   </div>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed mb-4">
@@ -188,7 +804,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
                 className="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
-                <span>Download Chrome Extension ZIP (v2.0)</span>
+                <span>Download Chrome Extension ZIP (v2.1)</span>
               </button>
             </div>
 
@@ -294,7 +910,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {PRESETS.map((preset) => (
+              {PRESETS_DETAILS.map((preset) => (
                 <div
                   key={preset.id}
                   onClick={() => setSelectedPreset(preset)}

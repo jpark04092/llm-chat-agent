@@ -90,10 +90,44 @@
   let ws = null;
   let wsConnected = false;
   let hasConnectedOnce = false;
+  let scanIntervalId = null;
+  let isPageAllowed = false;
+
   let config = {
     wsUrl: 'ws://localhost:9999',
     approvalPolicy: 'safety',
     autoSubmitResult: true,
+    presetToggles: {
+      gemini: true,
+      chatgpt: true,
+      claude: true,
+      deepseek: true,
+      openwebui: true,
+      librechat: false,
+      dify: false,
+    },
+    customSites: [
+      {
+        id: 'custom_default',
+        name: '사내 Custom LLM 웹 챗',
+        urlPattern: '*://*.internal/*, *://chat.corp.*',
+        enabled: true,
+        inputSelector: 'textarea, div[contenteditable="true"][role="textbox"], input[type="text"]',
+        sendSelector: 'button[type="submit"], button[aria-label*="send" i], button.send-btn',
+        messageSelector: '.assistant-message, .bot-message, div[data-role="assistant"], pre, code-block',
+        injectionMode: 'react-setter',
+      },
+      {
+        id: 'local_dev',
+        name: '로컬 시뮬레이터 (Local Dev)',
+        urlPattern: 'localhost:3000*, 127.0.0.1:3000*',
+        enabled: false,
+        inputSelector: 'textarea',
+        sendSelector: 'button',
+        messageSelector: '.message',
+        injectionMode: 'react-setter',
+      }
+    ],
     customUrlPattern: '',
     customInputSelector: '',
     customSendSelector: '',
@@ -118,12 +152,14 @@
   let pickerMode = null; // 'input' | 'send' | 'message' | null
   let hoveredElement = null;
 
-  // --- ADAPTER REGISTRY ARCHITECTURE ---
-  const adapters = [
+  // --- PRESET ADAPTER DEFINITIONS ---
+  const PRESET_ADAPTERS = [
     // 1. Google Gemini & AI Studio Adapter
     {
       name: 'Google Gemini',
       id: 'gemini',
+      urlPatterns: ['gemini.google.com', 'aistudio.google.com'],
+      defaultEnabled: true,
       match: () => /gemini\.google\.com|aistudio\.google\.com/i.test(window.location.hostname),
       getInput: () => {
         return document.querySelector('rich-textarea div[contenteditable="true"], rich-textarea .ql-editor, div[contenteditable="true"][role="textbox"], textarea[aria-label*="Prompt"], textarea[aria-label*="프롬프트"]');
@@ -142,6 +178,8 @@
     {
       name: 'ChatGPT',
       id: 'chatgpt',
+      urlPatterns: ['chatgpt.com', 'chat.openai.com'],
+      defaultEnabled: true,
       match: () => /chatgpt\.com|chat\.openai\.com/i.test(window.location.hostname),
       getInput: () => {
         return document.querySelector('#prompt-textarea, div[contenteditable="true"]#prompt-textarea, textarea[tabindex="0"]');
@@ -158,6 +196,8 @@
     {
       name: 'Claude.ai',
       id: 'claude',
+      urlPatterns: ['claude.ai'],
+      defaultEnabled: true,
       match: () => /claude\.ai/i.test(window.location.hostname),
       getInput: () => {
         return document.querySelector('div[contenteditable="true"].ProseMirror, fieldset div[contenteditable="true"], div[role="textbox"]');
@@ -174,6 +214,8 @@
     {
       name: 'DeepSeek',
       id: 'deepseek',
+      urlPatterns: ['chat.deepseek.com'],
+      defaultEnabled: true,
       match: () => /chat\.deepseek\.com/i.test(window.location.hostname),
       getInput: () => {
         return document.querySelector('#chat-input, textarea[placeholder*="DeepSeek"], textarea');
@@ -190,7 +232,9 @@
     {
       name: 'Open WebUI',
       id: 'openwebui',
-      match: () => Boolean(document.querySelector('#chat-textarea, #chat-input, div[id*="message-"]')),
+      urlPatterns: ['localhost:8080', '*openwebui*', 'openwebui.*'],
+      defaultEnabled: true,
+      match: () => /openwebui/i.test(window.location.hostname) || (window.location.port === '8080' && Boolean(document.querySelector('#chat-textarea, #chat-input'))),
       getInput: () => {
         return document.querySelector('#chat-textarea, textarea[placeholder*="Ask"], #chat-input, textarea');
       },
@@ -202,59 +246,203 @@
       },
       injectionMode: 'standard-input',
     },
-    // 6. Custom Enterprise Configured Adapter
+    // 6. LibreChat Adapter
     {
-      name: '사내 Custom LLM',
-      id: 'custom',
-      match: () => {
-        if (!config.customUrlPattern) return false;
-        try {
-          const patterns = config.customUrlPattern.split(',').map(s => s.trim()).filter(Boolean);
-          return patterns.some(p => {
-            const regexStr = p.replace(/\*/g, '.*').replace(/\//g, '\\/');
-            return new RegExp(regexStr, 'i').test(window.location.href);
-          });
-        } catch (e) {
-          return false;
-        }
-      },
+      name: 'LibreChat',
+      id: 'librechat',
+      urlPatterns: ['localhost:3080', '*librechat*'],
+      defaultEnabled: false,
+      match: () => /librechat/i.test(window.location.hostname) || window.location.port === '3080',
       getInput: () => {
-        if (config.customInputSelector) {
-          try {
-            const el = document.querySelector(config.customInputSelector);
-            if (el) return el;
-          } catch (e) {}
-        }
-        return document.querySelector('textarea, div[contenteditable="true"][role="textbox"], input[type="text"][placeholder*="chat" i]');
+        return document.querySelector('#prompt-textarea, textarea[data-id*="root"]');
       },
       getSendButton: () => {
-        if (config.customSendSelector) {
-          try {
-            const el = document.querySelector(config.customSendSelector);
-            if (el && !isStopButton(el) && !el.disabled) return el;
-          } catch (e) {}
-        }
-        return document.querySelector('button[type="submit"], button[aria-label*="send" i], button.send-btn');
+        return document.querySelector('button[data-testid="send-button"], button[type="submit"]');
       },
       getMessageCandidates: () => {
-        if (config.customMessageSelector) {
-          try {
-            const nodes = document.querySelectorAll(config.customMessageSelector);
-            if (nodes.length > 0) return nodes;
-          } catch (e) {}
-        }
-        return document.querySelectorAll('.assistant-message, .bot-message, div[data-role="assistant"], pre, code-block');
+        return document.querySelectorAll('div[data-testid*="message-assistant"], .text-message');
       },
-      injectionMode: config.customInjectionMode || 'react-setter',
+      injectionMode: 'react-setter',
+    },
+    // 7. Dify.ai Chat Adapter
+    {
+      name: 'Dify.ai',
+      id: 'dify',
+      urlPatterns: ['cloud.dify.ai', '*dify*'],
+      defaultEnabled: false,
+      match: () => /dify/i.test(window.location.hostname) || /cloud\.dify\.ai/i.test(window.location.hostname),
+      getInput: () => {
+        return document.querySelector('textarea[placeholder*="Talk"], textarea');
+      },
+      getSendButton: () => {
+        return document.querySelector('button:has(svg), button[type="submit"]');
+      },
+      getMessageCandidates: () => {
+        return document.querySelectorAll('.chat-answer-container, div[class*="answerContainer"]');
+      },
+      injectionMode: 'react-setter',
     },
   ];
 
-  function getActiveAdapter() {
-    for (const a of adapters) {
-      if (a.match()) return a;
+  // Helper: Wildcard / URL matcher
+  function matchUrlPattern(pattern, url, hostname) {
+    if (!pattern) return false;
+    const trimmed = pattern.trim();
+    if (!trimmed) return false;
+
+    // Check exact or substring domain
+    if (hostname && (hostname === trimmed || hostname.endsWith('.' + trimmed))) {
+      return true;
     }
-    // Default fallback: Custom Enterprise Heuristic
-    return adapters[adapters.length - 1];
+
+    try {
+      // Convert wildcard pattern to regex
+      const escaped = trimmed
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*');
+      const regex = new RegExp(`^${escaped}$`, 'i');
+      return regex.test(url) || regex.test(hostname) || url.includes(trimmed);
+    } catch (e) {
+      return url.includes(trimmed);
+    }
+  }
+
+  // Determine if current page is in user-allowed URL list
+  function evaluateUrlPermission() {
+    const currentUrl = window.location.href;
+    const currentHost = window.location.hostname;
+
+    // 1. Check Presets
+    for (const preset of PRESET_ADAPTERS) {
+      const isEnabled = config.presetToggles?.[preset.id] !== undefined
+        ? config.presetToggles[preset.id]
+        : preset.defaultEnabled;
+
+      if (isEnabled) {
+        const matchesPattern = preset.urlPatterns.some((pat) => matchUrlPattern(pat, currentUrl, currentHost));
+        const matchesDom = typeof preset.match === 'function' && preset.match();
+        if (matchesPattern || matchesDom) {
+          return {
+            allowed: true,
+            type: 'preset',
+            adapter: preset,
+            name: preset.name,
+          };
+        }
+      }
+    }
+
+    // 2. Check Custom Sites
+    if (Array.isArray(config.customSites)) {
+      for (const site of config.customSites) {
+        if (site.enabled && site.urlPattern) {
+          const patterns = site.urlPattern.split(',').map((s) => s.trim()).filter(Boolean);
+          const matched = patterns.some((p) => matchUrlPattern(p, currentUrl, currentHost));
+          if (matched) {
+            return {
+              allowed: true,
+              type: 'custom',
+              name: site.name || '사내 Custom LLM',
+              adapter: {
+                name: site.name || '사내 Custom LLM',
+                id: site.id || 'custom',
+                getInput: () => {
+                  if (site.inputSelector) {
+                    try {
+                      const el = document.querySelector(site.inputSelector);
+                      if (el) return el;
+                    } catch (e) {}
+                  }
+                  return document.querySelector('textarea, div[contenteditable="true"][role="textbox"], input[type="text"]');
+                },
+                getSendButton: () => {
+                  if (site.sendSelector) {
+                    try {
+                      const el = document.querySelector(site.sendSelector);
+                      if (el && !isStopButton(el) && !el.disabled) return el;
+                    } catch (e) {}
+                  }
+                  return document.querySelector('button[type="submit"], button[aria-label*="send" i], button.send-btn');
+                },
+                getMessageCandidates: () => {
+                  if (site.messageSelector) {
+                    try {
+                      const nodes = document.querySelectorAll(site.messageSelector);
+                      if (nodes.length > 0) return nodes;
+                    } catch (e) {}
+                  }
+                  return document.querySelectorAll('.assistant-message, .bot-message, div[data-role="assistant"], pre, code-block');
+                },
+                injectionMode: site.injectionMode || 'react-setter',
+              },
+            };
+          }
+        }
+      }
+    }
+
+    // 3. Fallback Legacy Custom Pattern
+    if (config.customUrlPattern) {
+      const patterns = config.customUrlPattern.split(',').map((s) => s.trim()).filter(Boolean);
+      const matched = patterns.some((p) => matchUrlPattern(p, currentUrl, currentHost));
+      if (matched) {
+        return {
+          allowed: true,
+          type: 'custom-legacy',
+          name: '사내 Custom LLM (Legacy)',
+          adapter: {
+            name: '사내 Custom LLM',
+            id: 'custom_legacy',
+            getInput: () => {
+              if (config.customInputSelector) {
+                try {
+                  const el = document.querySelector(config.customInputSelector);
+                  if (el) return el;
+                } catch (e) {}
+              }
+              return document.querySelector('textarea, div[contenteditable="true"][role="textbox"], input[type="text"]');
+            },
+            getSendButton: () => {
+              if (config.customSendSelector) {
+                try {
+                  const el = document.querySelector(config.customSendSelector);
+                  if (el && !isStopButton(el) && !el.disabled) return el;
+                } catch (e) {}
+              }
+              return document.querySelector('button[type="submit"], button[aria-label*="send" i], button.send-btn');
+            },
+            getMessageCandidates: () => {
+              if (config.customMessageSelector) {
+                try {
+                  const nodes = document.querySelectorAll(config.customMessageSelector);
+                  if (nodes.length > 0) return nodes;
+                } catch (e) {}
+              }
+              return document.querySelectorAll('.assistant-message, .bot-message, div[data-role="assistant"], pre, code-block');
+            },
+            injectionMode: config.customInjectionMode || 'react-setter',
+          },
+        };
+      }
+    }
+
+    return { allowed: false };
+  }
+
+  function getActiveAdapter() {
+    const perm = evaluateUrlPermission();
+    if (perm.allowed && perm.adapter) {
+      return perm.adapter;
+    }
+    // Fallback heuristic adapter
+    return {
+      name: 'Generic LLM Chat',
+      id: 'generic',
+      getInput: () => document.querySelector('textarea, div[contenteditable="true"][role="textbox"]'),
+      getSendButton: () => document.querySelector('button[type="submit"], button.send-button, button:has(svg)'),
+      getMessageCandidates: () => document.querySelectorAll('.assistant-message, [data-role="assistant"], .message'),
+      injectionMode: 'react-setter',
+    };
   }
 
   // --- SMART DOM TEXT INJECTION ENGINE ---
@@ -1037,28 +1225,77 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
     setTimeout(() => { toast.style.display = 'none'; }, 4000);
   }
 
-  function mountHUDIfMissing() {
-    if (document.getElementById('universal-agent-hud')) return;
-    const target = document.body || document.documentElement;
-    if (target) createAgentHUD(target);
+  let hasLoggedInactiveNotice = false;
+
+  function unmountHUD() {
+    const hud = document.getElementById('universal-agent-hud');
+    if (hud) {
+      hud.remove();
+    }
+    if (scanIntervalId) {
+      clearInterval(scanIntervalId);
+      scanIntervalId = null;
+    }
+    cleanDisconnect();
+  }
+
+  function syncHUDStateWithPermissions() {
+    const perm = evaluateUrlPermission();
+    isPageAllowed = perm.allowed;
+
+    if (isPageAllowed) {
+      hasLoggedInactiveNotice = false;
+      const existingHUD = document.getElementById('universal-agent-hud');
+      if (!existingHUD) {
+        const target = document.body || document.documentElement;
+        if (target) {
+          createAgentHUD(target);
+          console.log(`%c✨ [Universal Web AI Agent] HUD Active for: ${perm.name}`, 'background: #065f46; color: #a7f3d0; padding: 3px 6px; border-radius: 4px;');
+        }
+      }
+      if (!scanIntervalId) {
+        scanIntervalId = setInterval(scanPageForToolCalls, 700);
+      }
+    } else {
+      unmountHUD();
+      if (!hasLoggedInactiveNotice) {
+        console.log(`%cℹ️ [Universal Web AI Agent] Inactive on this URL (${window.location.hostname}). To enable, check Extension Options > Allowed Sites.`, 'background: #1e293b; color: #94a3b8; padding: 2px 6px; border-radius: 4px;');
+        hasLoggedInactiveNotice = true;
+      }
+    }
   }
 
   // Load configuration from sync storage (do not auto-connect on load/refresh)
   if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
     chrome.storage.sync.get(config, (items) => {
-      if (items) Object.assign(config, items);
+      if (items) {
+        Object.assign(config, items);
+        if (items.presetToggles) config.presetToggles = { ...config.presetToggles, ...items.presetToggles };
+        if (Array.isArray(items.customSites)) config.customSites = items.customSites;
+      }
+      syncHUDStateWithPermissions();
     });
+
+    // Listen for live changes from Options page
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'sync') {
+        for (const [key, change] of Object.entries(changes)) {
+          config[key] = change.newValue;
+        }
+        syncHUDStateWithPermissions();
+      }
+    });
+  } else {
+    syncHUDStateWithPermissions();
   }
 
   // Observer
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      mountHUDIfMissing();
-      setInterval(scanPageForToolCalls, 700);
+      syncHUDStateWithPermissions();
     });
   } else {
-    mountHUDIfMissing();
-    setInterval(scanPageForToolCalls, 700);
+    syncHUDStateWithPermissions();
   }
 
   // Explicitly close WebSocket connection on page unload/refresh (F5, navigation, tab close)
@@ -1075,8 +1312,14 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
   window.addEventListener('pagehide', cleanDisconnect);
 
   const observer = new MutationObserver(() => {
-    mountHUDIfMissing();
-    scanPageForToolCalls();
+    if (isPageAllowed) {
+      const existingHUD = document.getElementById('universal-agent-hud');
+      if (!existingHUD) {
+        const target = document.body || document.documentElement;
+        if (target) createAgentHUD(target);
+      }
+      scanPageForToolCalls();
+    }
   });
   observer.observe(document.documentElement || document, { childList: true, subtree: true });
 })();

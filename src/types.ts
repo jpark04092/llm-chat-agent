@@ -66,3 +66,26 @@ export interface ServerStatus {
 
 export type ApprovalPolicy = 'full-auto' | 'safety' | 'read-only';
 
+export interface PresetSiteItem {
+  id: string;
+  name: string;
+  tag: string;
+  tagClass: 'official' | 'popular' | 'self-hosted' | 'custom';
+  urlDisplay: string;
+  urlPatterns: string[];
+  defaultEnabled: boolean;
+  enabled: boolean;
+}
+
+export interface CustomSiteItem {
+  id: string;
+  name: string;
+  urlPattern: string;
+  enabled: boolean;
+  inputSelector?: string;
+  sendSelector?: string;
+  messageSelector?: string;
+  injectionMode?: 'react-setter' | 'standard-input' | 'contenteditable-paste';
+}
+
+
