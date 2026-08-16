@@ -1,9 +1,9 @@
 # Project Architecture Context Document (Token-Optimized)
 
 ## Project Overview
-- **Name:** gemini-vscode-agent (v1.1.0)
+- **Name:** gemini-vscode-agent (v2.1 Allowlist Edition)
 - **Tech Stack:** React 18, Vite, Tailwind CSS v4, Express, WebSocket (`ws`), TypeScript, Node.js, `esbuild`  
-- **Purpose:** Full-duplex VS Code Bridge Server & Web Dashboard managing agent tool execution (`tool_call`) across Client-Server-Extension environments.
+- **Purpose:** Full-duplex VS Code Bridge Server & Multi-LLM Web Dashboard managing agent tool execution across Client-Server-Extension environments with selective URL filtering and enterprise LLM support.
 
 ## File Hierarchy
 ```
@@ -12,19 +12,25 @@
 ├── vite.config.ts         # Vite bundler setup
 ├── tsconfig.json          # TypeScript config
 ├── chrome-extension/      # Extension source for Chrome browser integration
+│   ├── manifest.json      # MV3 manifest with storage & host permissions
+│   ├── content.js         # Selective HUD injector, DOM parser & Tool call scanner
+│   ├── background.js      # Service worker handling connection lifetime
+│   ├── options.html       # Allowed sites & custom LLM management UI
+│   ├── options.js         # Chrome storage sync & CRUD controller
+│   └── options.css        # Clean dark-mode stylesheet
 ├── vscode-extension/      # Extension source for VS Code integration
+│   ├── src/extension.ts   # Embedded WS server (:9999) + File I/O + Terminal
+│   └── package.json       # VS Code extension manifest
 └── src/                   # React Frontend App
     ├── App.tsx            # Main state manager, WS client, and tool handler
-    ├── main.tsx           # React entry point
-    ├── index.css          # Tailwind CSS styles
-    ├── types.ts           # Core TS interfaces (Payloads, Logs, Chat, ServerStatus)
+    ├── types.ts           # Core TS interfaces (Payloads, Presets, CustomSites)
     └── components/        # UI Views
         ├── Header.tsx             # Global navigation & status bar
         ├── FloatingHUD.tsx        # Injected overlay HUD component
         ├── GeminiChatSimulator.tsx# Interactive agent chat interface
         ├── WorkspaceExplorer.tsx  # Workspace file browser
         ├── BridgeConsole.tsx      # Real-time WebSocket log viewer
-        └── ExtensionHub.tsx       # Chrome/VS Code extension manager
+        └── ExtensionHub.tsx       # Sites allowlist manager & extension download hub
 ```
 
 ## System Interfaces & JSON Protocol (`src/types.ts`)
@@ -46,10 +52,34 @@ interface ToolResultPayload {
 }
 
 type ApprovalPolicy = 'full-auto' | 'safety' | 'read-only';
+
+interface PresetSiteItem {
+  id: string;
+  name: string;
+  tag: string;
+  tagClass: 'official' | 'popular' | 'self-hosted' | 'custom';
+  urlDisplay: string;
+  urlPatterns: string[];
+  defaultEnabled: boolean;
+  enabled: boolean;
+}
+
+interface CustomSiteItem {
+  id: string;
+  name: string;
+  urlPattern: string;
+  enabled: boolean;
+  inputSelector?: string;
+  sendSelector?: string;
+  messageSelector?: string;
+  injectionMode?: 'react-setter' | 'standard-input' | 'contenteditable-paste';
+}
 ```
 
 ## Core Execution Flow
-1. **Agent (`/api/agent/chat`)** outputs Markdown containing JSON `tool_call` blocks.
-2. **`App.tsx` (Parser)** extracts JSON via `parseToolCallFromText()`.
-3. **Execution (`/api/tools/execute`)** runs requested command subject to `ApprovalPolicy`.
-4. **Loop Handshake:** Formatted `[Tool Execution Result]` is piped back to agent.
+1. **URL Evaluation (`evaluateUrlPermission()`)**: Verifies if the active page matches enabled presets or custom URL patterns. If not allowed, zero background work is performed.
+2. **HUD Injection (`createAgentHUD()`)**: Renders on allowed domains; stays disconnected until user clicks [연결] to protect against historical loop re-execution.
+3. **Agent Output Parsing**: Detects tool calls (`file:edit`, `file:read`, `terminal:exec`, etc.) from chat responses.
+4. **Execution over WebSocket (:9999)**: Dispatches tool payload to VS Code or Server according to `ApprovalPolicy`.
+5. **Loop Handshake:** Formatted `[Tool Execution Result]` is returned and injected into the web chat.
+

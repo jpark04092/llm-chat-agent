@@ -208,6 +208,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
   approvalPolicy,
   setApprovalPolicy,
 }) => {
+  const [showFeatureGuide, setShowFeatureGuide] = useState(true);
   const [activeTab, setActiveTab] = useState<'sites' | 'downloads' | 'custom-llm' | 'dom-guide'>('sites');
   const [presets, setPresets] = useState<PresetSiteItem[]>(INITIAL_PRESETS);
   const [customSites, setCustomSites] = useState<CustomSiteItem[]>(INITIAL_CUSTOM_SITES);
@@ -437,18 +438,71 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
       {/* Tab 1: Allowed Sites & Preset On/Off URL Manager */}
       {activeTab === 'sites' && (
         <div className="space-y-6">
-          {/* Security & Clean HUD Info Banner */}
-          <div className="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-start gap-3">
-            <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl mt-0.5">
-              <ShieldCheck className="w-5 h-5" />
+          {/* Feature Overview & Functional Guide Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>💡 이번 업데이트 기능 상세 설명 (v2.1 Allowlist & Multi-LLM Guide)</span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                      최신 반영됨
+                    </span>
+                  </h3>
+                  <span className="text-xs text-slate-400">
+                    원치 않는 웹 사이트에서의 오작동 방지 및 사내망 Custom LLM 지원 아키텍처 안내
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowFeatureGuide(!showFeatureGuide)}
+                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold cursor-pointer px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700/80 transition-all"
+              >
+                <span>{showFeatureGuide ? '설명 접기' : '설명 펼치기'}</span>
+                <span>{showFeatureGuide ? '▴' : '▾'}</span>
+              </button>
             </div>
-            <div className="text-xs space-y-1">
-              <h4 className="font-bold text-white">사이트 선택적 HUD 활성화 (URL Filtering & Allowlist)</h4>
-              <p className="text-slate-300 leading-relaxed">
-                현재 허용 목록에 등록되고 <b>[ON]</b>으로 켜져 있는 AI 웹 챗 사이트에서만 우측 하단에 VS Code Agent HUD가 표시됩니다.
-                포털, 뉴스, 이메일 등 <b>사용하지 않는 사이트에서는 HUD가 뜨지 않고 백그라운드 리소스 소모가 완전히 차단</b>됩니다.
-              </p>
-            </div>
+
+            {showFeatureGuide && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2 border-t border-slate-800/80 text-xs">
+                {/* Point 1 */}
+                <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-indigo-300">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    <span>1. 선택적 HUD 주입 (Allowlist)</span>
+                  </div>
+                  <p className="text-slate-400 text-[11.5px] leading-relaxed">
+                    이전에는 모든 웹사이트에 HUD가 강제 표시되었으나, 이제 <b>[ON]으로 설정된 AI 사이트에서만 HUD가 로드</b>됩니다. 포털·뉴스 등 일반 웹 서핑 시 브라우저 리소스 소모가 0%로 완전히 차단됩니다.
+                  </p>
+                </div>
+
+                {/* Point 2 */}
+                <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-purple-300">
+                    <Globe className="w-4 h-4 text-purple-400" />
+                    <span>2. 사내 Custom LLM 및 프리셋 토글</span>
+                  </div>
+                  <p className="text-slate-400 text-[11.5px] leading-relaxed">
+                    Gemini, ChatGPT, Claude 외에도 <b>사내망 폐쇄형 LLM 웹 챗 도메인</b>(예: <code className="text-purple-300 font-mono text-[10px]">*://*.internal/*</code>)을 손쉽게 등록하여 즉시 자율 코딩 루프를 실행할 수 있습니다.
+                  </p>
+                </div>
+
+                {/* Point 3 */}
+                <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-emerald-300">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    <span>3. 새로고침 시 자동 연결 방지</span>
+                  </div>
+                  <p className="text-slate-400 text-[11.5px] leading-relaxed">
+                    웹 페이지를 새로고침(F5)하거나 탭을 이동할 때 이전 대화 히스토리의 Tool Call이 의도치 않게 재실행되는 사고를 막기 위해, 명시적으로 <b>[연결]</b> 버튼을 누를 때만 안전하게 동작합니다.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Preset Sites Toggle Section */}
