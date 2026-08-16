@@ -2,11 +2,11 @@
 const PRESET_ADAPTERS = [
   {
     id: 'gemini',
-    name: 'Google Gemini & AI Studio',
+    name: 'Google Gemini',
     tag: 'Official',
     tagClass: 'official',
-    urlDisplay: 'gemini.google.com, aistudio.google.com',
-    urlPatterns: ['gemini.google.com', 'aistudio.google.com'],
+    urlDisplay: 'gemini.google.com',
+    urlPatterns: ['gemini.google.com'],
     defaultEnabled: true,
   },
   {

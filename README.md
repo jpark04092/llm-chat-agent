@@ -11,7 +11,7 @@
 - **기본 지원 AI 서비스별 독립 On/Off 토글**:
   - OpenAI ChatGPT (`chatgpt.com`, `chat.openai.com`)
   - Anthropic Claude.ai (`claude.ai`)
-  - Google Gemini & AI Studio (`gemini.google.com`, `aistudio.google.com`)
+  - Google Gemini (`gemini.google.com`)
   - DeepSeek Chat (`chat.deepseek.com`)
   - Open WebUI (`localhost:8080`, `*openwebui*`)
   - LibreChat (`localhost:3080`, `*librechat*`)

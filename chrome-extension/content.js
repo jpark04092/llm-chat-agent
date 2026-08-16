@@ -154,13 +154,13 @@
 
   // --- PRESET ADAPTER DEFINITIONS ---
   const PRESET_ADAPTERS = [
-    // 1. Google Gemini & AI Studio Adapter
+    // 1. Google Gemini Adapter
     {
       name: 'Google Gemini',
       id: 'gemini',
-      urlPatterns: ['gemini.google.com', 'aistudio.google.com'],
+      urlPatterns: ['gemini.google.com'],
       defaultEnabled: true,
-      match: () => /gemini\.google\.com|aistudio\.google\.com/i.test(window.location.hostname),
+      match: () => /gemini\.google\.com/i.test(window.location.hostname),
       getInput: () => {
         return document.querySelector('rich-textarea div[contenteditable="true"], rich-textarea .ql-editor, div[contenteditable="true"][role="textbox"], textarea[aria-label*="Prompt"], textarea[aria-label*="프롬프트"]');
       },

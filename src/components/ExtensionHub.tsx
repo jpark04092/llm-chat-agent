@@ -36,11 +36,11 @@ interface ExtensionHubProps {
 const INITIAL_PRESETS: PresetSiteItem[] = [
   {
     id: 'gemini',
-    name: 'Google Gemini & AI Studio',
+    name: 'Google Gemini',
     tag: 'Official',
     tagClass: 'official',
-    urlDisplay: 'gemini.google.com, aistudio.google.com',
-    urlPatterns: ['gemini.google.com', 'aistudio.google.com'],
+    urlDisplay: 'gemini.google.com',
+    urlPatterns: ['gemini.google.com'],
     defaultEnabled: true,
     enabled: true,
   },
@@ -132,8 +132,8 @@ const INITIAL_CUSTOM_SITES: CustomSiteItem[] = [
 const PRESETS_DETAILS = [
   {
     id: 'gemini',
-    name: 'Google Gemini & AI Studio',
-    url: 'gemini.google.com, aistudio.google.com',
+    name: 'Google Gemini',
+    url: 'gemini.google.com',
     input: 'rich-textarea div[contenteditable="true"]',
     send: 'button[aria-label*="보내기"], button[aria-label*="Send"]',
     msg: 'model-response, [class*="model-response"]',
