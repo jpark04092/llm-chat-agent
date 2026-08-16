@@ -89,6 +89,7 @@
   // State & Config
   let ws = null;
   let wsConnected = false;
+  let hasConnectedOnce = false;
   let config = {
     wsUrl: 'ws://localhost:9999',
     approvalPolicy: 'safety',
@@ -594,6 +595,9 @@
             if (isCallAlreadyExecuted(el, data.id, data.command, data.args)) return;
             markCallAsExecuted(el, data.id, data.command, data.args);
 
+            // While disconnected, mark historical tool calls without executing or notifying
+            if (!wsConnected || !ws || ws.readyState !== WebSocket.OPEN) return;
+
             console.log('⚡ [Universal Agent] Detected Tool Call:', data);
             showHUDNotification(`⚡ 도구 감지: ${data.command} (${data.id})`);
             executeToolCall(data);
@@ -623,9 +627,17 @@
     ws.send(JSON.stringify(payload));
   }
 
+  function updateConnectButtonCaption() {
+    const btn = document.getElementById('hud-reconnect-btn');
+    if (!btn) return;
+    btn.textContent = hasConnectedOnce ? '재연결' : '연결';
+  }
+
   // --- WEBSOCKET BRIDGE CONNECTION ---
   function initBridgeConnection() {
-    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+      try { ws.close(); } catch (e) {}
+    }
 
     updateHUDStatus('connecting', 'Bridge 연결 중...');
     try {
@@ -633,6 +645,8 @@
 
       ws.onopen = () => {
         wsConnected = true;
+        hasConnectedOnce = true;
+        updateConnectButtonCaption();
         const adapter = getActiveAdapter();
         updateHUDStatus('connected', `Bridge 연결됨 (${adapter.name})`);
         ws.send(JSON.stringify({
@@ -641,6 +655,7 @@
           platform: adapter.name,
           url: window.location.href,
         }));
+        showHUDNotification('🟢 Bridge 서버에 연결되었습니다.');
       };
 
       ws.onmessage = (event) => {
@@ -652,8 +667,7 @@
 
       ws.onclose = () => {
         wsConnected = false;
-        updateHUDStatus('disconnected', 'Bridge 미연결 (재시도 중)');
-        setTimeout(initBridgeConnection, 4000);
+        updateHUDStatus('disconnected', hasConnectedOnce ? 'Bridge 연결 끊김' : 'Bridge 미연결 (연결 대기)');
       };
 
       ws.onerror = () => {
@@ -661,7 +675,8 @@
         updateHUDStatus('error', 'Bridge 서버 없음 (:9999)');
       };
     } catch (err) {
-      setTimeout(initBridgeConnection, 5000);
+      wsConnected = false;
+      updateHUDStatus('error', '연결 실패 (:9999)');
     }
   }
 
@@ -933,7 +948,7 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
       <div class="hud-body" id="hud-body">
         <div class="hud-status-row">
           <div id="hud-status-dot" class="hud-dot"></div>
-          <span id="hud-status-text" style="font-weight:500;">Bridge 서버 확인 중...</span>
+          <span id="hud-status-text" style="font-weight:500;">Bridge 미연결 (연결 대기)</span>
         </div>
 
         <div id="hud-busy-panel">
@@ -961,7 +976,7 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
         </div>
 
         <div class="hud-btn-group">
-          <button id="hud-reconnect-btn" class="hud-btn" style="flex:1;">Bridge 재연결</button>
+          <button id="hud-reconnect-btn" class="hud-btn" style="flex:1;">연결</button>
         </div>
       </div>
     `;
@@ -981,7 +996,6 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
     });
 
     document.getElementById('hud-reconnect-btn')?.addEventListener('click', () => {
-      if (ws) ws.close();
       initBridgeConnection();
     });
 
@@ -1029,14 +1043,11 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
     if (target) createAgentHUD(target);
   }
 
-  // Load configuration from sync storage
+  // Load configuration from sync storage (do not auto-connect on load/refresh)
   if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
     chrome.storage.sync.get(config, (items) => {
       if (items) Object.assign(config, items);
-      initBridgeConnection();
     });
-  } else {
-    initBridgeConnection();
   }
 
   // Observer
@@ -1049,6 +1060,19 @@ ${msg.error ? `Error:\n${msg.error}` : ''}
     mountHUDIfMissing();
     setInterval(scanPageForToolCalls, 700);
   }
+
+  // Explicitly close WebSocket connection on page unload/refresh (F5, navigation, tab close)
+  const cleanDisconnect = () => {
+    if (ws) {
+      try {
+        ws.close(1000, 'Page unloading/refreshing');
+      } catch (e) {}
+      ws = null;
+      wsConnected = false;
+    }
+  };
+  window.addEventListener('beforeunload', cleanDisconnect);
+  window.addEventListener('pagehide', cleanDisconnect);
 
   const observer = new MutationObserver(() => {
     mountHUDIfMissing();

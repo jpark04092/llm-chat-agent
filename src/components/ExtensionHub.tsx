@@ -268,7 +268,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
                 <h4 className="text-xs font-bold text-slate-200">자율 코딩 시작</h4>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
                   1. 원하는 웹 챗(Gemini, Claude, 사내 LLM) 열기<br />
-                  2. 우측 하단 <b>VS Code Agent HUD</b> 확인<br />
+                  2. 우측 하단 <b>VS Code Agent HUD</b>에서 <b>[연결]</b> 버튼 클릭 (새로고침 시 히스토리 오실행 방지)<br />
                   3. <b>[부트스트랩 전송]</b> 클릭 후 개발 작업 지시!
                 </p>
               </div>
