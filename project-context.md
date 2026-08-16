@@ -1,7 +1,7 @@
 # Project Architecture Context Document (Token-Optimized)
 
 ## Project Overview
-- **Name:** gemini-vscode-agent (v2.1 Allowlist Edition)
+- **Name:** universal-web-ai-vscode-agent (v2.1 Allowlist Edition)
 - **Tech Stack:** React 18, Vite, Tailwind CSS v4, Express, WebSocket (`ws`), TypeScript, Node.js, `esbuild`  
 - **Purpose:** Full-duplex VS Code Bridge Server & Multi-LLM Web Dashboard managing agent tool execution across Client-Server-Extension environments with selective URL filtering and enterprise LLM support.
 
@@ -27,7 +27,7 @@
     └── components/        # UI Views
         ├── Header.tsx             # Global navigation & status bar
         ├── FloatingHUD.tsx        # Injected overlay HUD component
-        ├── GeminiChatSimulator.tsx# Interactive agent chat interface
+        ├── GeminiChatSimulator.tsx# Multi-LLM interactive agent chat interface
         ├── WorkspaceExplorer.tsx  # Workspace file browser
         ├── BridgeConsole.tsx      # Real-time WebSocket log viewer
         └── ExtensionHub.tsx       # Sites allowlist manager & extension download hub

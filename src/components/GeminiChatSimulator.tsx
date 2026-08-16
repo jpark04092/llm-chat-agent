@@ -52,13 +52,13 @@ export const GeminiChatSimulator: React.FC<GeminiChatSimulatorProps> = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              Gemini Web UI Simulator
+              Universal Web AI Simulator
               <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 Bridge Active
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              Bi-directional DOM parser & autonomous tool execution environment
+              Multi-LLM (ChatGPT, Claude, Gemini, DeepSeek, Custom) Autonomous Agent Simulator
             </p>
           </div>
         </div>

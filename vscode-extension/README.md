@@ -1,38 +1,38 @@
-# Gemini Web Orchestrated Agent (VS Code Extension with Embedded Server)
+# Universal Web AI Orchestrated Agent (VS Code Extension with Embedded Server)
 
-Gemini 웹(`gemini.google.com`)과 직접 통신하는 **내장형 WebSocket Bridge Server(`ws://localhost:9999`)** 및 로컬 파일/터미널 명령을 수행하는 **Passthrough Command Executor**가 하나로 통합된 VS Code 확장 프로그램입니다.
+ChatGPT, Claude, Gemini, DeepSeek, Open WebUI 및 사내 엔터프라이즈 Custom LLM 웹 챗과 직접 통신하는 **내장형 WebSocket Bridge Server(`ws://localhost:9999`)** 및 로컬 파일/터미널 명령을 수행하는 **Passthrough Command Executor**가 하나로 통합된 VS Code 확장 프로그램입니다.
 
 ## 🚀 차별점 (Embedded Architecture)
 - 별도의 Node.js 서버 프로세스를 백그라운드나 터미널에서 수동으로 켤 필요가 없습니다.
 - **VS Code 내에서 직접 WebSocket 브리지 서버가 구동**되며, 명령어 팔레트 또는 상태 표시줄을 통해 간편하게 제어할 수 있습니다.
-- Chrome Extension이 `ws://localhost:9999`로 연결하여 즉시 도구 호출(Tool Call)을 수행합니다.
+- Chrome Extension이 `ws://localhost:9999`로 연결하여 다양한 Web LLM 인터페이스에서 즉시 도구 호출(Tool Call)을 수행합니다.
 
 ## 🛠️ 실행 방법
 1. VS Code에서 `vscode-extension` 폴더를 엽니다.
 2. `npm install` 실행
 3. `F5` 키를 눌러 Extension Development Host 창을 실행합니다.
-4. 명령어 팔레트(`Ctrl+Shift+P` / `Cmd+Shift+P`)에서 **`Gemini Agent: Connect Bridge Server`**를 실행하거나, 우측 하단 상태 표시줄의 `Gemini Bridge` 항목을 클릭하여 서버를 연결합니다.
-5. 이제 `gemini.google.com`에서 요청을 보내면 바로 로컬 파일 읽기/수정(`file:edit` 고속 패치)/생성 및 터미널 명령이 실행됩니다!
+4. 명령어 팔레트(`Ctrl+Shift+P` / `Cmd+Shift+P`)에서 **`AI Agent: Connect Bridge Server`**를 실행하거나, 우측 하단 상태 표시줄의 `AI Agent Bridge` 항목을 클릭하여 서버를 연결합니다.
+5. 이제 지원되는 웹 챗(ChatGPT, Claude, Gemini 등)에서 요청을 보내면 바로 로컬 파일 읽기/수정(`file:edit` 고속 패치)/생성 및 터미널 명령이 실행됩니다!
 
 ## ⌨️ 명령어 팔레트 (Command Palette) 기능
-VS Code에서 `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`)를 누른 뒤 **`Gemini Agent:`**를 입력하면 다음 명령들을 바로 실행할 수 있습니다:
+VS Code에서 `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`)를 누른 뒤 **`AI Agent:`** (또는 `Gemini Agent:`)를 입력하면 다음 명령들을 바로 실행할 수 있습니다:
 
 | 명령어 (Title) | Command ID | 설명 |
 | :--- | :--- | :--- |
-| **`Gemini Agent: Connect Bridge Server`** | `geminiAgent.startServer` | 내장 WebSocket 브리지 서버를 시작하고 포트(기본 9999)에서 연결을 대기합니다. |
-| **`Gemini Agent: Disconnect Bridge Server`** | `geminiAgent.stopServer` | 실행 중인 브리지 서버를 안전하게 중지하고 연결을 해제합니다. |
-| **`Gemini Agent: Restart Bridge Server`** | `geminiAgent.restartServer` | 브리지 서버를 즉시 재시작하여 새로운 연결을 준비합니다. |
-| **`Gemini Agent: Manage Bridge Server`** | `geminiAgent.toggleServer` | 빠른 선택 메뉴(QuickPick)를 열어 현재 상태에 맞춰 연결/중지/재시작/로그 보기를 한눈에 선택합니다. |
-| **`Gemini Agent: Show Output Channel`** | `geminiAgent.showLogs` | 'Gemini Web Agent' 전용 출력(Output) 창을 열어 브리지 통신 및 도구 실행 로그를 실시간으로 확인합니다. |
+| **`AI Agent: Connect Bridge Server`** | `geminiAgent.startServer` | 내장 WebSocket 브리지 서버를 시작하고 포트(기본 9999)에서 연결을 대기합니다. |
+| **`AI Agent: Disconnect Bridge Server`** | `geminiAgent.stopServer` | 실행 중인 브리지 서버를 안전하게 중지하고 연결을 해제합니다. |
+| **`AI Agent: Restart Bridge Server`** | `geminiAgent.restartServer` | 브리지 서버를 즉시 재시작하여 새로운 연결을 준비합니다. |
+| **`AI Agent: Manage Bridge Server`** | `geminiAgent.toggleServer` | 빠른 선택 메뉴(QuickPick)를 열어 현재 상태에 맞춰 연결/중지/재시작/로그 보기를 한눈에 선택합니다. |
+| **`AI Agent: Show Output Channel`** | `geminiAgent.showLogs` | 'Universal Web AI Agent' 전용 출력(Output) 창을 열어 브리지 통신 및 도구 실행 로그를 실시간으로 확인합니다. |
 
 ### 📌 상태 표시줄 (Status Bar) 빠른 제어
 - VS Code 우측 하단 상태 표시줄에 현재 서버 상태와 접속된 클라이언트 수가 실시간 표시됩니다:
-  - 연결 시: `$(radio-tower) Gemini Bridge :9999 (N Clients)`
-  - 미연결 시: `$(plug) Gemini Bridge: Disconnected`
-- 상태 표시줄 항목을 클릭하면 `Gemini Agent: Manage Bridge Server` QuickPick 메뉴가 즉시 나타납니다.
+  - 연결 시: `$(radio-tower) AI Agent Bridge :9999 (N Clients)`
+  - 미연결 시: `$(plug) AI Agent Bridge: Disconnected`
+- 상태 표시줄 항목을 클릭하면 `AI Agent: Manage Bridge Server` QuickPick 메뉴가 즉시 나타납니다.
 
 ## ⚙️ 확장 프로그램 설정 (Configuration)
-VS Code 설정(`Ctrl+,` / `Cmd+,`)에서 `Gemini Agent`를 검색하거나 `settings.json`에서 다음 설정을 변경할 수 있습니다:
+VS Code 설정(`Ctrl+,` / `Cmd+,`)에서 `Universal Web AI Agent` 또는 `Gemini Agent`를 검색하거나 `settings.json`에서 다음 설정을 변경할 수 있습니다:
 
 ```json
 {

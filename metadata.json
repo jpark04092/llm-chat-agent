@@ -1,6 +1,6 @@
 {
-  "name": "Gemini VS Code Agent Suite",
-  "description": "Bi-directional WebSocket Bridge & Autonomous Agent Controller connecting Gemini Web with VS Code for automated workspace file operations and terminal execution.",
+  "name": "Universal Web AI – VS Code Agent Suite",
+  "description": "Bi-directional WebSocket Bridge & Autonomous Agent Controller connecting Web LLM Chat UIs (ChatGPT, Claude, Gemini, DeepSeek, OpenWebUI & Custom Enterprise LLMs) with VS Code for automated workspace file operations and terminal execution.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

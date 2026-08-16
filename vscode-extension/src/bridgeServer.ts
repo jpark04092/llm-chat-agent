@@ -53,14 +53,14 @@ export class EmbeddedBridgeServer {
       }
 
       this.outputChannel.appendLine(`[BRIDGE SERVER] Starting embedded WebSocket server on port ${this.port}...`);
-      this.updateStatus('starting', '$(sync~spin) Gemini Server: Starting...');
+      this.updateStatus('starting', '$(sync~spin) AI Agent Server: Starting...');
 
       try {
         this.wss = new WebSocketServer({ port: this.port, host: '0.0.0.0' }, () => {
           this.isRunning = true;
-          this.updateStatus('running', `$(radio-tower) Gemini Bridge: :${this.port} (0 Clients)`);
+          this.updateStatus('running', `$(radio-tower) AI Agent Bridge: :${this.port} (0 Clients)`);
           this.outputChannel.appendLine(`[BRIDGE SERVER] 🚀 Server successfully running at ws://localhost:${this.port}`);
-          vscode.window.showInformationMessage(`Gemini Agent: Embedded Bridge Server running on port ${this.port}`);
+          vscode.window.showInformationMessage(`Universal Web AI Agent: Embedded Bridge Server running on port ${this.port}`);
           resolve(true);
         });
 
@@ -337,11 +337,11 @@ export class EmbeddedBridgeServer {
     if (this.isRunning) {
       if (this.currentActiveCall) {
         const elapsedSec = Math.floor((Date.now() - this.currentActiveCall.startedAt) / 1000);
-        this.statusBarItem.text = `$(sync~spin) Gemini: [${this.currentActiveCall.command}] ${elapsedSec}s (Busy)`;
+        this.statusBarItem.text = `$(sync~spin) AI Agent: [${this.currentActiveCall.command}] ${elapsedSec}s (Busy)`;
       } else {
         const count = this.connectedChromeClients.size;
         const icon = count > 0 ? '$(radio-tower)' : '$(broadcast)';
-        this.updateStatus('running', `${icon} Gemini Bridge :${this.port} (${count} Chrome)`);
+        this.updateStatus('running', `${icon} AI Agent Bridge :${this.port} (${count} Clients)`);
       }
     }
   }
@@ -349,13 +349,13 @@ export class EmbeddedBridgeServer {
   private updateStatus(state: 'running' | 'starting' | 'stopped', text: string) {
     this.statusBarItem.text = text;
     if (state === 'running') {
-      this.statusBarItem.tooltip = `Gemini Agent Server Running on port ${this.port}. Click to restart or view options.`;
+      this.statusBarItem.tooltip = `AI Agent Server Running on port ${this.port}. Click to restart or view options.`;
       this.statusBarItem.backgroundColor = undefined;
     } else if (state === 'starting') {
-      this.statusBarItem.tooltip = 'Gemini Agent Server: Starting...';
+      this.statusBarItem.tooltip = 'AI Agent Server: Starting...';
       this.statusBarItem.backgroundColor = undefined;
     } else {
-      this.statusBarItem.tooltip = 'Gemini Agent Server is Stopped. Click to Start.';
+      this.statusBarItem.tooltip = 'AI Agent Server is Stopped. Click to Start.';
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
     }
     this.statusBarItem.show();

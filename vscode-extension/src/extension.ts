@@ -6,8 +6,8 @@ let bridgeServer: EmbeddedBridgeServer | null = null;
 let outputChannel: vscode.OutputChannel | null = null;
 
 export function activate(context: vscode.ExtensionContext) {
-  outputChannel = vscode.window.createOutputChannel('Gemini Web Agent');
-  outputChannel.appendLine('🤖 [Gemini Web Agent] Extension activated.');
+  outputChannel = vscode.window.createOutputChannel('Universal Web AI Agent');
+  outputChannel.appendLine('🤖 [Universal Web AI Agent] Extension activated.');
 
   // Create Status Bar Item
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -27,8 +27,8 @@ export function activate(context: vscode.ExtensionContext) {
   if (autoStartServer) {
     bridgeServer.start();
   } else {
-    statusBarItem.text = '$(plug) Gemini Bridge: Disconnected';
-    statusBarItem.tooltip = 'Click to connect or manage Gemini Bridge Server';
+    statusBarItem.text = '$(plug) AI Agent Bridge: Disconnected';
+    statusBarItem.tooltip = 'Click to connect or manage AI Agent Bridge Server';
     statusBarItem.show();
   }
 
@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
         ? ['서버 중지 (Disconnect)', '서버 재시작 (Restart)', '로그 보기 (Show Logs)']
         : ['서버 연결 (Connect)', '로그 보기 (Show Logs)'];
 
-      const pick = await vscode.window.showQuickPick(options, { placeHolder: 'Gemini Bridge Server 관리' });
+      const pick = await vscode.window.showQuickPick(options, { placeHolder: 'AI Agent Bridge Server 관리' });
       if (!pick) return;
 
       if (pick.includes('Connect') || pick.includes('연결')) {

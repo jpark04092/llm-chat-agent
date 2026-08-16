@@ -35,7 +35,7 @@ export const FloatingHUD: React.FC<FloatingHUDProps> = ({
 
   return (
     <div
-      id="gemini-agent-hud"
+      id="universal-agent-hud"
       className="fixed bottom-4 right-4 z-50 transition-all duration-300 select-none shadow-2xl font-sans"
     >
       <div className="bg-slate-900/95 border border-indigo-500/40 backdrop-blur-md rounded-2xl p-3.5 w-84 text-slate-100 shadow-indigo-950/50 flex flex-col gap-2.5">
@@ -53,7 +53,7 @@ export const FloatingHUD: React.FC<FloatingHUDProps> = ({
               ></span>
             </span>
             <span className="text-xs font-bold tracking-tight text-white flex items-center gap-1.5">
-              🤖 Gemini Agent HUD
+              🤖 Web AI Agent HUD
               <span className="text-[9px] px-1 rounded bg-indigo-500/20 text-indigo-300 font-mono">
                 Bridge
               </span>

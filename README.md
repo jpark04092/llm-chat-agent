@@ -1,6 +1,6 @@
-# Gemini Web – VS Code Orchestrated Agent Suite (Embedded Server Edition)
+# Universal Web AI – VS Code Orchestrated Agent Suite (Embedded Server Edition)
 
-본 프로젝트는 Gemini Web UI (gemini.google.com), Claude, ChatGPT, DeepSeek, Open WebUI 및 **사내 엔터프라이즈 Custom LLM 웹 챗**, Chrome Extension, 그리고 **WebSocket 서버가 내장된 VS Code Extension**을 직접 연결하여 터미널 데몬 실행 없이 로컬 자율 코딩 에이전트를 가동하는 통합 시스템입니다.
+본 프로젝트는 ChatGPT (chatgpt.com), Claude (claude.ai), Gemini (gemini.google.com), DeepSeek (chat.deepseek.com), Open WebUI, LibreChat, Dify 및 **사내 엔터프라이즈 Custom LLM 웹 챗**, Chrome Extension, 그리고 **WebSocket 서버가 내장된 VS Code Extension**을 직접 연결하여 터미널 데몬 실행 없이 로컬 자율 코딩 에이전트를 가동하는 통합 범용 시스템입니다.
 
 ---
 
@@ -9,9 +9,9 @@
 ### 1. 🌐 사이트 선택적 HUD 활성화 및 URL 허용 관리 (Selective URL Allowlist)
 - **Zero-Overhead 리소스 보호**: 일반 포털, 뉴스, 사내 업무 시스템 등 사용하지 않는 사이트에서는 HUD가 일체 마운트되지 않으며, 백그라운드 DOM 스캔 및 웹소켓 연결 리소스 소모가 완전히 차단(0%)됩니다.
 - **기본 지원 AI 서비스별 독립 On/Off 토글**:
-  - Google Gemini & AI Studio (`gemini.google.com`, `aistudio.google.com`)
   - OpenAI ChatGPT (`chatgpt.com`, `chat.openai.com`)
   - Anthropic Claude.ai (`claude.ai`)
+  - Google Gemini & AI Studio (`gemini.google.com`, `aistudio.google.com`)
   - DeepSeek Chat (`chat.deepseek.com`)
   - Open WebUI (`localhost:8080`, `*openwebui*`)
   - LibreChat (`localhost:3080`, `*librechat*`)
@@ -37,8 +37,8 @@
 ### 1. VS Code Extension 실행:
 1. VS Code로 `vscode-extension` 폴더를 엽니다.
 2. `npm install` 실행 후 `F5` 키를 눌러 Extension Development Host 창을 엽니다.
-3. 명령어 팔레트(`Ctrl+Shift+P` / `Cmd+Shift+P`)에서 **`Gemini Agent: Connect Bridge Server`**를 실행하거나 우측 하단 상태바의 `Gemini Bridge`를 클릭하여 서버를 시작합니다.
-4. 우측 하단 상태바에 `$(radio-tower) Gemini Bridge :9999 (0 Clients)`가 표시됩니다.
+3. 명령어 팔레트(`Ctrl+Shift+P` / `Cmd+Shift+P`)에서 **`AI Agent: Connect Bridge Server`** (또는 `Gemini Agent: Connect Bridge Server`)를 실행하거나 우측 하단 상태바의 `AI Agent Bridge`를 클릭하여 서버를 시작합니다.
+4. 우측 하단 상태바에 `$(radio-tower) AI Agent Bridge :9999 (0 Clients)`가 표시됩니다.
 
 ### 2. Chrome Extension 로드 및 사이트 설정:
 1. Chrome 주소창에 `chrome://extensions/` 입력
@@ -47,7 +47,7 @@
 4. 확장 프로그램 아이콘 우클릭 -> **[옵션(Options)]** 또는 대시보드의 **[🌐 작동 사이트 & URL 허용 관리]** 탭에서 원하는 AI 서비스 On/Off 확인
 
 ### 3. Web AI 접속 및 코딩 시작:
-1. 허용 목록에 등록된 웹 챗(Gemini, ChatGPT, Claude, 사내 LLM 등) 접속
+1. 허용 목록에 등록된 웹 챗(ChatGPT, Claude, Gemini, DeepSeek, 사내 LLM 등) 접속
 2. 우측 하단 플로팅 HUD에서 **[연결]** 버튼 클릭 (`VS Code 내장 서버 연결됨 (:9999)` 확인)
 3. **[부트스트랩 전송]** 클릭 후 "package.json 읽어줘", "src/App.tsx를 수정해줘(`file:edit` 고속 부분 패치)", 또는 "npm test 실행해줘" 등으로 자율 코딩 루프를 실행하세요!
 

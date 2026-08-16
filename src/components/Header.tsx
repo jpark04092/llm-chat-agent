@@ -32,12 +32,12 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-white tracking-tight">Gemini VS Code Agent</h1>
+                <h1 className="text-base font-bold text-white tracking-tight">Universal Web AI Agent</h1>
                 <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  v1.1.0
+                  v2.1
                 </span>
               </div>
-              <p className="text-xs text-slate-400">WebSocket Bridge & Autonomous Workspace Executor</p>
+              <p className="text-xs text-slate-400">Multi-LLM WebSocket Bridge & Autonomous Workspace Executor</p>
             </div>
           </div>
 

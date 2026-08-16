@@ -1,9 +1,9 @@
 {
-  "name": "gemini-web-orchestrated-agent",
-  "displayName": "Gemini Web Orchestrated Agent",
-  "description": "Embedded WebSocket Bridge Server & Autonomous Coding Executor for Gemini Web UI",
-  "version": "1.1.0",
-  "publisher": "gemini-agent",
+  "name": "universal-web-ai-orchestrated-agent",
+  "displayName": "Universal Web AI Agent for VS Code",
+  "description": "Embedded WebSocket Bridge Server & Autonomous Coding Executor for Web LLMs (ChatGPT, Claude, Gemini, DeepSeek, OpenWebUI, Custom Enterprise LLMs)",
+  "version": "2.1.0",
+  "publisher": "web-ai-agent",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -13,28 +13,28 @@
     "commands": [
       {
         "command": "geminiAgent.startServer",
-        "title": "Gemini Agent: Connect Bridge Server"
+        "title": "AI Agent: Connect Bridge Server"
       },
       {
         "command": "geminiAgent.stopServer",
-        "title": "Gemini Agent: Disconnect Bridge Server"
+        "title": "AI Agent: Disconnect Bridge Server"
       },
       {
         "command": "geminiAgent.restartServer",
-        "title": "Gemini Agent: Restart Bridge Server"
+        "title": "AI Agent: Restart Bridge Server"
       },
       {
         "command": "geminiAgent.toggleServer",
-        "title": "Gemini Agent: Manage Bridge Server"
+        "title": "AI Agent: Manage Bridge Server"
       },
       {
         "command": "geminiAgent.showLogs",
-        "title": "Gemini Agent: Show Output Channel"
+        "title": "AI Agent: Show Output Channel"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "Gemini Web Agent",
+      "title": "Universal Web AI Agent",
       "properties": {
         "geminiAgent.serverPort": {
           "type": "number",
