@@ -162,17 +162,41 @@ function resolveWorkspaceUri(relativePath?: string): string {
   return absolutePath;
 }
 
+function normalizeCommand(rawCommand: string): string {
+  const c = (rawCommand || '').trim().toLowerCase();
+  if (['file:patch', 'file:edit', 'patch', 'edit', 'file_patch', 'file_edit', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
+    return 'file:patch';
+  }
+  if (['file:read', 'read', 'file_read', 'read_file', 'file:cat', 'cat', 'file:get'].includes(c)) {
+    return 'file:read';
+  }
+  if (['file:write', 'write', 'file_write', 'write_file', 'file:create', 'create_file', 'file:put'].includes(c)) {
+    return 'file:write';
+  }
+  if (['file:list', 'list', 'file_list', 'list_files', 'dir', 'ls', 'file:dir'].includes(c)) {
+    return 'file:list';
+  }
+  if (['terminal:exec', 'terminal:run', 'terminal', 'exec', 'terminal_exec', 'shell', 'bash', 'cmd', 'command'].includes(c)) {
+    return 'terminal:exec';
+  }
+  if (['npm:run', 'npm_run', 'npm', 'run'].includes(c)) {
+    return 'npm:run';
+  }
+  return c;
+}
+
 // Command Executor matching vscode-extension executor.ts
 async function executeTool(call: ToolCallPayload): Promise<ToolResultPayload> {
   const callId = call.id || `call_${Date.now()}`;
-  const command = call.command;
+  const rawCommand = call.command || '';
+  const command = normalizeCommand(rawCommand);
   const args = call.args || {};
   const startedAt = Date.now();
 
-  const activeInfo: ActiveServerExecution = { callId, command, startedAt };
+  const activeInfo: ActiveServerExecution = { callId, command: rawCommand, startedAt };
   activeExecutions.set(callId, activeInfo);
-  broadcastBusy(callId, command, startedAt, args);
-  addLog('executor', { callId, command, args }, command);
+  broadcastBusy(callId, rawCommand, startedAt, args);
+  addLog('executor', { callId, command: rawCommand, normalizedCommand: command, args }, rawCommand);
 
   try {
     let result: any = null;
@@ -708,6 +732,28 @@ async function startServer() {
     }
   });
 
+  // Download compiled VSIX package directly
+  app.get('/api/extension/download-vsix', async (req, res) => {
+    try {
+      const releaseDir = path.join(workspaceRoot, 'release');
+      const latestVsix = path.join(releaseDir, 'universal-web-ai-agent-latest.vsix');
+      if (existsSync(latestVsix)) {
+        return res.download(latestVsix, 'universal-web-ai-agent-latest.vsix');
+      }
+      // Check for any vsix in release or vscode-extension
+      if (existsSync(releaseDir)) {
+        const files = await fs.readdir(releaseDir);
+        const vsix = files.find(f => f.endsWith('.vsix'));
+        if (vsix) {
+          return res.download(path.join(releaseDir, vsix), vsix);
+        }
+      }
+      res.status(404).json({ error: 'No compiled VSIX package found in release/ folder. Run npm run build in vscode-extension.' });
+    } catch (err: any) {
+      res.status(500).json({ error: `Failed to download VSIX: ${err.message}` });
+    }
+  });
+
   // Generate ZIP of Chrome Extension
   app.get('/api/extension/download-chrome-zip', async (req, res) => {
     try {
@@ -803,17 +849,18 @@ Keep your explanations concise, professional, and directly state what you are go
     const id = `call_${Date.now()}`;
 
     if (lower.includes('수정') || lower.includes('edit') || lower.includes('변경') || lower.includes('바꿔') || lower.includes('replace') || lower.includes('패치')) {
-      simulatedResponse = `I will use \`file:edit\` to apply targeted modifications to the file without rewriting the entire content, minimizing latency.
+      simulatedResponse = `I will use \`file:patch\` to apply targeted line-based modifications to the file without rewriting the entire content, minimizing latency.
 
 \`\`\`json
 {
   "agent_action": "tool_call",
   "id": "${id}",
-  "command": "file:edit",
+  "command": "file:patch",
   "args": {
     "path": "src/App.tsx",
-    "target": "const [approvalPolicy, setApprovalPolicy] = useState<ApprovalPolicy>('safety');",
-    "replacement": "const [approvalPolicy, setApprovalPolicy] = useState<ApprovalPolicy>('full-auto');"
+    "line_start": 29,
+    "line_end": 29,
+    "replacement": "  const [approvalPolicy, setApprovalPolicy] = useState<ApprovalPolicy>('full-auto');"
   }
 }
 \`\`\``;

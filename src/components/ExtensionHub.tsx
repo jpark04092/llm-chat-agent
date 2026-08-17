@@ -29,6 +29,7 @@ import { ApprovalPolicy, PresetSiteItem, CustomSiteItem } from '../types';
 interface ExtensionHubProps {
   onDownloadChromeZip: () => void;
   onDownloadSuiteZip: () => void;
+  onDownloadVsix?: () => void;
   approvalPolicy: ApprovalPolicy;
   setApprovalPolicy: (policy: ApprovalPolicy) => void;
 }
@@ -205,6 +206,7 @@ const PRESETS_DETAILS = [
 export const ExtensionHub: React.FC<ExtensionHubProps> = ({
   onDownloadChromeZip,
   onDownloadSuiteZip,
+  onDownloadVsix,
   approvalPolicy,
   setApprovalPolicy,
 }) => {
@@ -880,13 +882,22 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
                 </p>
               </div>
 
-              <button
-                onClick={onDownloadSuiteZip}
-                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold py-2.5 rounded-xl shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Full Suite Package ZIP</span>
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={onDownloadVsix || onDownloadSuiteZip}
+                  className="flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold py-2.5 rounded-xl shadow-lg shadow-purple-600/30 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Compiled .vsix Package</span>
+                </button>
+                <button
+                  onClick={onDownloadSuiteZip}
+                  className="flex items-center justify-center gap-2 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold py-2 rounded-xl border border-slate-700 transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Full Suite Package ZIP</span>
+                </button>
+              </div>
             </div>
           </div>
 

@@ -552,6 +552,10 @@ ${result.error ? `Error:\n${result.error}` : ''}
     window.location.href = '/api/extension/download-suite-zip';
   };
 
+  const handleDownloadVsix = () => {
+    window.location.href = '/api/extension/download-vsix';
+  };
+
   const pendingCount = messages.filter((m) => m.status === 'pending').length;
 
   return (
@@ -605,6 +609,7 @@ ${result.error ? `Error:\n${result.error}` : ''}
           <ExtensionHub
             onDownloadChromeZip={handleDownloadChromeZip}
             onDownloadSuiteZip={handleDownloadSuiteZip}
+            onDownloadVsix={handleDownloadVsix}
             approvalPolicy={approvalPolicy}
             setApprovalPolicy={setApprovalPolicy}
           />

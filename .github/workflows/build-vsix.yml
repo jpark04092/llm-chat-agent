@@ -7,31 +7,47 @@ on:
     paths:
       - 'vscode-extension/**'
       - '.github/workflows/build-vsix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Install dependencies & Compile
         working-directory: ./vscode-extension
-        run: npm install
+        run: |
+          npm install
+          npm run compile
 
-      - name: Package VSIX
-        working-directory: ./vscode-extension
-        run: npx @vscode/vsce package --no-git-tag-version
+      - name: Package VSIX to release folder
+        run: |
+          mkdir -p release
+          cd vscode-extension
+          npx @vscode/vsce package --no-git-tag-version --out ../release/
+          cd ..
+          cp release/*.vsix release/universal-web-ai-agent-latest.vsix 2>/dev/null || true
+          ls -la release/
 
-      - name: Upload VSIX Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vscode-extension-vsix
-          path: vscode-extension/*.vsix
-          retention-days: 14
+      - name: Commit and Push VSIX to Repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add release/
+          git commit -m "chore(release): update VSIX build in release folder [skip ci]" || echo "No changes to commit"
+          git push origin main
+

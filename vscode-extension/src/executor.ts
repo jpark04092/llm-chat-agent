@@ -11,6 +11,29 @@ interface ActiveExecution {
   isAborted?: boolean;
 }
 
+function normalizeCommand(rawCommand: string): string {
+  const c = (rawCommand || '').trim().toLowerCase();
+  if (['file:patch', 'file:edit', 'patch', 'edit', 'file_patch', 'file_edit', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
+    return 'file:patch';
+  }
+  if (['file:read', 'read', 'file_read', 'read_file', 'file:cat', 'cat', 'file:get'].includes(c)) {
+    return 'file:read';
+  }
+  if (['file:write', 'write', 'file_write', 'write_file', 'file:create', 'create_file', 'file:put'].includes(c)) {
+    return 'file:write';
+  }
+  if (['file:list', 'list', 'file_list', 'list_files', 'dir', 'ls', 'file:dir'].includes(c)) {
+    return 'file:list';
+  }
+  if (['terminal:exec', 'terminal:run', 'terminal', 'exec', 'terminal_exec', 'shell', 'bash', 'cmd', 'command'].includes(c)) {
+    return 'terminal:exec';
+  }
+  if (['npm:run', 'npm_run', 'npm', 'run'].includes(c)) {
+    return 'npm:run';
+  }
+  return c;
+}
+
 export class CommandExecutor {
   private outputChannel: vscode.OutputChannel;
   private agentTerminal: vscode.Terminal | null = null;
@@ -73,14 +96,15 @@ export class CommandExecutor {
 
   public async execute(call: ToolCallPayload): Promise<ToolResultPayload> {
     const callId = call.id || `call_${Date.now()}`;
-    const command = call.command;
+    const rawCommand = call.command || '';
+    const command = normalizeCommand(rawCommand);
     const args = call.args || {};
     const startedAt = Date.now();
 
-    const activeInfo: ActiveExecution = { callId, command, startedAt };
+    const activeInfo: ActiveExecution = { callId, command: rawCommand, startedAt };
     this.activeExecutions.set(callId, activeInfo);
 
-    this.outputChannel.appendLine(`[EXECUTOR] Executing: ${command} (${callId})`);
+    this.outputChannel.appendLine(`[EXECUTOR] Executing: ${rawCommand} -> [${command}] (${callId})`);
     this.reportProgress(callId, `Starting ${command}...`);
 
     try {
@@ -96,7 +120,6 @@ export class CommandExecutor {
           result = await this.handleFileWrite(args.path, args.content);
           break;
         case 'file:patch':
-        case 'file:edit':
           this.reportProgress(callId, `Applying diff/patch to: ${args.path || '.'}`);
           result = await this.handleFilePatch(args.path, args);
           break;
@@ -113,7 +136,7 @@ export class CommandExecutor {
           result = await this.handleTerminalExec(args.cmd, activeInfo);
           break;
         default:
-          throw new Error(`Unknown command: "${command}"`);
+          throw new Error(`Unknown command: "${rawCommand}"`);
       }
 
       if (activeInfo.isAborted) {
