@@ -36,7 +36,7 @@ export const GeminiChatSimulator: React.FC<GeminiChatSimulatorProps> = ({
 
   const samplePrompts = [
     { label: '📄 Read File', prompt: 'package.json 파일을 읽어서 어떤 설정과 의존성이 있는지 분석해줘.' },
-    { label: '⚡ Fast file:edit', prompt: 'src/App.tsx 파일에서 ApprovalPolicy 초기값을 변경하도록 file:edit를 수행해줘.' },
+    { label: '⚡ Line / Diff file:patch', prompt: 'src/App.tsx 파일에서 라인 번호 기반 file:patch를 사용하여 ApprovalPolicy 초기값을 변경해줘.' },
     { label: '📁 List Files', prompt: '현재 워크스페이스의 루트 파일 목록을 조회해줘.' },
     { label: '📝 Write File', prompt: 'src/greeter.ts 파일을 생성하고 인사를 출력하는 코드를 작성해줘.' },
     { label: '🧪 Run Terminal', prompt: '터미널에서 ls -la 명령어를 실행하고 결과를 알려줘.' },

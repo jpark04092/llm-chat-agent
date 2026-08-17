@@ -11,51 +11,65 @@
 효율적인 작업 진행과 원활한 코드 관리를 위해, 작업 단계마다 파일 조회, 파일 수정, 파일 생성, 명령어 실행 제안이 필요한 경우 일반 설명과 함께 아래와 같은 **JSON 포맷(tool_call)** 코드 블록을 포함하여 답변해 주시기 바랍니다.
 
 [출력 포맷 규약]
-1. 파일 목록 확인이 필요한 경우:
+1. 기존 파일 내용 확인이 필요한 경우 (라인 번호 확인):
 \`\`\`json
 {
   "agent_action": "tool_call",
   "id": "call_1",
-  "command": "file:list",
-  "args": { "path": "." }
-}
-\`\`\`
-
-2. 기존 파일 내용 확인이 필요한 경우:
-\`\`\`json
-{
-  "agent_action": "tool_call",
-  "id": "call_2",
   "command": "file:read",
   "args": { "path": "src/App.tsx" }
 }
 \`\`\`
 
-3. 기존 파일 부분 수정이 필요한 경우 (★가장 권장 - 빠른 속도 및 지연 최소화):
+2. 기존 파일 부분 수정이 필요한 경우 (★가장 권장 - 라인 번호 치환 또는 Unified Diff 패치):
+[방법 A: 라인 번호 기반 치환 (권장)]
 \`\`\`json
 {
   "agent_action": "tool_call",
-  "id": "call_3",
-  "command": "file:edit",
+  "id": "call_2",
+  "command": "file:patch",
   "args": {
     "path": "src/App.tsx",
-    "target": "const [count, setCount] = useState(0);",
+    "line_start": 10,
+    "line_end": 12,
     "replacement": "const [count, setCount] = useState(100);"
   }
 }
 \`\`\`
-※ 기존 파일을 수정할 때는 전체를 다시 쓰는 file:write 대신, 먼저 file:read로 내용을 확인한 뒤 반드시 file:edit를 사용하여 수정할 부분만 타겟팅해 변경해 주세요.
-
-4. 새 파일 생성 또는 전체 파일 작성이 필요한 경우:
+[방법 B: Unified Diff / Hunk 패치]
 \`\`\`json
 {
   "agent_action": "tool_call",
-  "id": "call_4",
+  "id": "call_2",
+  "command": "file:patch",
+  "args": {
+    "path": "src/App.tsx",
+    "patch": "@@ -10,3 +10,3 @@\\n-const [count, setCount] = useState(0);\\n+const [count, setCount] = useState(100);"
+  }
+}
+\`\`\`
+※ 기존 파일을 수정할 때는 전체를 다시 쓰는 file:write 대신, 먼저 file:read로 내용을 확인한 뒤 반드시 file:patch를 사용하여 수정할 부분만 라인 번호(line_start, line_end) 또는 Diff 포맷으로 지정해 주세요.
+
+3. 새 파일 생성 또는 전체 파일 작성이 필요한 경우:
+\`\`\`json
+{
+  "agent_action": "tool_call",
+  "id": "call_3",
   "command": "file:write",
   "args": {
     "path": "src/components/MyComponent.tsx",
     "content": "export function MyComponent() { return <div>Hello</div>; }"
   }
+}
+\`\`\`
+
+4. 특정 디렉토리 파일 목록 확인이 필요한 경우:
+\`\`\`json
+{
+  "agent_action": "tool_call",
+  "id": "call_4",
+  "command": "file:list",
+  "args": { "path": "." }
 }
 \`\`\`
 
@@ -81,10 +95,10 @@
 
 [진행 방식]
 - 한 번에 한 단계씩 작업을 제안하고 위의 JSON 포맷을 출력해 주세요.
-- 기존 코드를 변경할 때는 지연을 방지하기 위해 가급적 file:read 후 file:edit를 사용해 주세요.
+- 기존 코드를 변경할 때는 공백/줄바꿈 매칭 오차 및 지연을 방지하기 위해 file:read 후 file:patch(라인 번호 기반 또는 Diff)를 사용해 주세요.
 - 제가 해당 작업의 결과를 다음 메시지([Tool Execution Result])로 전달해 드리면, 그 결과를 바탕으로 다음 단계 작업을 이어가 주시면 됩니다.
 
-위 포맷으로 진행할 준비가 되셨다면, 먼저 프로젝트의 루트 파일 구조를 확인하기 위해 \`file:list\` JSON을 출력해 주세요.`;
+위 규약으로 진행할 준비가 되셨다면, 불필요한 초기 파일 목록 조회(file:list)를 즉시 실행하지 마시고, 준비되었다는 확인 메시지(예: '준비되었습니다. 어떤 개발 작업을 진행할까요?')로 답변해 주세요.`;
 
   // State & Config
   let ws = null;

@@ -876,7 +876,7 @@ export const ExtensionHub: React.FC<ExtensionHubProps> = ({
                   </div>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                  VS Code 내부에 <code className="text-purple-300">ws://localhost:9999</code> 브릿지 서버를 실행하여 파일 읽기/부분수정(file:edit)/생성 및 터미널 명령어를 안전한 승인 정책 하에 로컬 실행합니다.
+                  VS Code 내부에 <code className="text-purple-300">ws://localhost:9999</code> 브릿지 서버를 실행하여 파일 읽기/안정적 패치(file:patch)/생성 및 터미널 명령어를 안전한 승인 정책 하에 로컬 실행합니다.
                 </p>
               </div>
 

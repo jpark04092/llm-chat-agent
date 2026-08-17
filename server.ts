@@ -196,15 +196,9 @@ async function executeTool(call: ToolCallPayload): Promise<ToolResultPayload> {
         break;
       }
 
+      case 'file:patch':
       case 'file:edit': {
         if (!args.path) throw new Error('Missing "path" argument');
-        const targetStr = args.target ?? args.search ?? args.oldText ?? args.targetContent;
-        if (targetStr === undefined || targetStr === null || targetStr === '') {
-          throw new Error('Missing "target" (search text) argument for file:edit');
-        }
-        const replaceStr = (args.replacement ?? args.replace ?? args.newText ?? args.replacementContent) !== undefined
-          ? String(args.replacement ?? args.replace ?? args.newText ?? args.replacementContent)
-          : '';
         const targetPath = resolveWorkspaceUri(args.path);
 
         if (!existsSync(targetPath)) {
@@ -212,27 +206,198 @@ async function executeTool(call: ToolCallPayload): Promise<ToolResultPayload> {
         }
 
         const originalContent = await fs.readFile(targetPath, 'utf8');
-        if (!originalContent.includes(targetStr)) {
+        const isCRLF = originalContent.includes('\r\n');
+        const eol = isCRLF ? '\r\n' : '\n';
+        const lines = originalContent.split(/\r?\n/);
+
+        // MODE 1: Line-number based replacement (line_start / line_end)
+        const rawStart = args.line_start ?? args.lineStart ?? args.start_line ?? args.startLine ?? args.line;
+        if (rawStart !== undefined && rawStart !== null && rawStart !== '') {
+          const lineStart = Math.max(1, parseInt(String(rawStart), 10));
+          const rawEnd = args.line_end ?? args.lineEnd ?? args.end_line ?? args.endLine ?? lineStart;
+          const lineEnd = Math.min(lines.length, Math.max(lineStart, parseInt(String(rawEnd), 10)));
+
+          const replacementText = args.replacement ?? args.replace ?? args.newText ?? args.content ?? args.replacementContent ?? '';
+          const repLines = String(replacementText).split(/\r?\n/);
+
+          const deletedCount = Math.max(0, lineEnd - lineStart + 1);
+          lines.splice(lineStart - 1, deletedCount, ...repLines);
+          const updatedContent = lines.join(eol);
+
+          await fs.writeFile(targetPath, updatedContent, 'utf8');
+          const byteLength = Buffer.byteLength(updatedContent, 'utf8');
+          result = `Successfully patched lines ${lineStart}-${lineEnd} in "${args.path}". Replaced ${deletedCount} line(s) with ${repLines.length} line(s) (total ${lines.length} lines, ${byteLength} bytes written).`;
+          break;
+        }
+
+        // MODE 2: Unified Diff / Hunk format (patch or diff)
+        const patchStr = args.patch ?? args.diff ?? args.hunk;
+        if (patchStr !== undefined && patchStr !== null && String(patchStr).trim() !== '') {
+          const patchText = String(patchStr);
+          const hunkHeaderRegex = /@@\s*-(\d+)(?:,(\d+))?\s*\+(\d+)(?:,(\d+))?\s*@@/g;
+
+          if (hunkHeaderRegex.test(patchText)) {
+            hunkHeaderRegex.lastIndex = 0;
+            const hunkMatches: { header: RegExpExecArray; body: string }[] = [];
+            let m: RegExpExecArray | null;
+            let lastIdx = 0;
+            let prevMatch: RegExpExecArray | null = null;
+
+            while ((m = hunkHeaderRegex.exec(patchText)) !== null) {
+              if (prevMatch) {
+                hunkMatches.push({
+                  header: prevMatch,
+                  body: patchText.substring(lastIdx, m.index),
+                });
+              }
+              prevMatch = m;
+              lastIdx = hunkHeaderRegex.lastIndex;
+            }
+            if (prevMatch) {
+              hunkMatches.push({
+                header: prevMatch,
+                body: patchText.substring(lastIdx),
+              });
+            }
+
+            let workingLines = [...lines];
+            let totalHunksApplied = 0;
+
+            for (const hunk of hunkMatches) {
+              const oldStart = parseInt(hunk.header[1], 10);
+              const hunkBodyLines = hunk.body.split(/\r?\n/).filter(l => l.length > 0 || l === '');
+
+              const toRemove: string[] = [];
+              const toAdd: string[] = [];
+
+              for (const hLine of hunkBodyLines) {
+                if (hLine.startsWith('+')) {
+                  toAdd.push(hLine.substring(1));
+                } else if (hLine.startsWith('-')) {
+                  toRemove.push(hLine.substring(1));
+                }
+              }
+
+              let targetLineIndex = Math.max(0, oldStart - 1);
+              let matchFound = false;
+
+              const searchRange = 40;
+              const minIndex = Math.max(0, targetLineIndex - searchRange);
+              const maxIndex = Math.min(workingLines.length - 1, targetLineIndex + searchRange);
+
+              for (let offset = 0; offset <= searchRange; offset++) {
+                const tryIndices = [targetLineIndex + offset, targetLineIndex - offset].filter(
+                  (idx) => idx >= minIndex && idx <= maxIndex
+                );
+                for (const idx of tryIndices) {
+                  if (toRemove.length === 0) {
+                    targetLineIndex = idx;
+                    matchFound = true;
+                    break;
+                  }
+                  const slice = workingLines.slice(idx, idx + toRemove.length);
+                  const sliceTrimmed = slice.map(l => l.trim()).join('\n');
+                  const removeTrimmed = toRemove.map(l => l.trim()).join('\n');
+                  if (sliceTrimmed === removeTrimmed || slice.join('\n') === toRemove.join('\n')) {
+                    targetLineIndex = idx;
+                    matchFound = true;
+                    break;
+                  }
+                }
+                if (matchFound) break;
+              }
+
+              workingLines.splice(targetLineIndex, toRemove.length, ...toAdd);
+              totalHunksApplied++;
+            }
+
+            const updatedContent = workingLines.join(eol);
+            await fs.writeFile(targetPath, updatedContent, 'utf8');
+            const byteLength = Buffer.byteLength(updatedContent, 'utf8');
+            result = `Successfully applied ${totalHunksApplied} Unified Diff hunk(s) to "${args.path}" (total ${workingLines.length} lines, ${byteLength} bytes written).`;
+            break;
+          }
+        }
+
+        // MODE 3: Fallback Targeted Replacement with whitespace/line-ending normalization
+        const targetStr = args.target ?? args.search ?? args.oldText ?? args.targetContent;
+        if (targetStr !== undefined && targetStr !== null && targetStr !== '') {
+          const replaceStr = (args.replacement ?? args.replace ?? args.newText ?? args.replacementContent) !== undefined
+            ? String(args.replacement ?? args.replace ?? args.newText ?? args.replacementContent)
+            : '';
+
+          const searchTarget = String(targetStr);
+          let updatedContent: string | null = null;
+          let matchType = '';
+
+          // 1. Exact match
+          if (originalContent.includes(searchTarget)) {
+            matchType = 'exact match';
+            if (args.replaceAll) {
+              updatedContent = originalContent.split(searchTarget).join(replaceStr);
+            } else {
+              updatedContent = originalContent.replace(searchTarget, replaceStr);
+            }
+          }
+
+          // 2. Line-ending normalized match (\r\n <-> \n)
+          if (!updatedContent) {
+            const normOriginal = originalContent.replace(/\r\n/g, '\n');
+            const normTarget = searchTarget.replace(/\r\n/g, '\n');
+            const normReplace = replaceStr.replace(/\r\n/g, '\n');
+
+            if (normOriginal.includes(normTarget)) {
+              matchType = 'newline-normalized match';
+              const replacedNorm = normOriginal.replace(normTarget, normReplace);
+              updatedContent = isCRLF ? replacedNorm.replace(/\n/g, '\r\n') : replacedNorm;
+            }
+          }
+
+          // 3. Trimmed-line fuzzy block match (immune to indentation/trailing space differences)
+          if (!updatedContent) {
+            const targetLines = searchTarget.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+            if (targetLines.length > 0) {
+              const fileLinesTrimmed = lines.map(l => l.trim());
+              let foundStartIdx = -1;
+              for (let i = 0; i <= fileLinesTrimmed.length - targetLines.length; i++) {
+                let matched = true;
+                for (let j = 0; j < targetLines.length; j++) {
+                  if (fileLinesTrimmed[i + j] !== targetLines[j]) {
+                    matched = false;
+                    break;
+                  }
+                }
+                if (matched) {
+                  foundStartIdx = i;
+                  break;
+                }
+              }
+
+              if (foundStartIdx !== -1) {
+                matchType = 'whitespace-tolerant fuzzy match';
+                const repLines = replaceStr.split(/\r?\n/);
+                const workingLines = [...lines];
+                workingLines.splice(foundStartIdx, targetLines.length, ...repLines);
+                updatedContent = workingLines.join(eol);
+              }
+            }
+          }
+
+          if (updatedContent !== null) {
+            await fs.writeFile(targetPath, updatedContent, 'utf8');
+            const byteLength = Buffer.byteLength(updatedContent, 'utf8');
+            result = `Successfully patched "${args.path}" via ${matchType} (${byteLength} bytes written).`;
+            break;
+          }
+
           throw new Error(
-            `Target string not found in "${args.path}". Please run file:read first to inspect current file content before editing.`
+            `Target content could not be located in "${args.path}". Please run file:read to verify line numbers or use line_start/line_end for exact replacement.`
           );
         }
 
-        let updatedContent: string;
-        let count = 0;
-        if (args.replaceAll) {
-          const parts = originalContent.split(targetStr);
-          count = parts.length - 1;
-          updatedContent = parts.join(replaceStr);
-        } else {
-          count = 1;
-          updatedContent = originalContent.replace(targetStr, replaceStr);
-        }
-
-        await fs.writeFile(targetPath, updatedContent, 'utf8');
-        const byteLength = Buffer.byteLength(updatedContent, 'utf8');
-        result = `File successfully edited at "${args.path}". Replaced ${count} occurrence(s) (${byteLength} bytes written).`;
-        break;
+        throw new Error(
+          `Invalid arguments for file:patch on "${args.path}". Please provide { "line_start": number, "line_end": number, "replacement": "..." } or { "patch": "@@ ... @@" }.`
+        );
       }
 
       case 'file:list': {

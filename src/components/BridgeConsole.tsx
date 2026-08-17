@@ -33,7 +33,7 @@ export const BridgeConsole: React.FC<BridgeConsoleProps> = ({
 
   const toolTemplates: Record<string, string> = {
     'file:read': '{\n  "path": "package.json"\n}',
-    'file:edit': '{\n  "path": "package.json",\n  "target": "\\"name\\": \\"gemini-vscode-agent\\"",\n  "replacement": "\\"name\\": \\"gemini-vscode-agent\\""\n}',
+    'file:patch': '{\n  "path": "package.json",\n  "line_start": 2,\n  "line_end": 4,\n  "replacement": "  \\"name\\": \\"universal-web-ai-agent\\",\\n  \\"version\\": \\"1.3.0\\""\n}',
     'file:write': '{\n  "path": "src/sample.txt",\n  "content": "Hello World from Bridge!"\n}',
     'file:list': '{\n  "path": "."\n}',
     'npm:run': '{\n  "script": "build"\n}',
