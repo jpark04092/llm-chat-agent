@@ -12,7 +12,7 @@ ChatGPT, Claude, Gemini, DeepSeek, Open WebUI 및 사내 엔터프라이즈 Cust
 2. `npm install` 실행
 3. `F5` 키를 눌러 Extension Development Host 창을 실행합니다.
 4. 명령어 팔레트(`Ctrl+Shift+P` / `Cmd+Shift+P`)에서 **`AI Agent: Connect Bridge Server`**를 실행하거나, 우측 하단 상태 표시줄의 `AI Agent Bridge` 항목을 클릭하여 서버를 연결합니다.
-5. 이제 지원되는 웹 챗(ChatGPT, Claude, Gemini 등)에서 요청을 보내면 바로 로컬 파일 읽기/수정(`file:edit` 고속 패치)/생성 및 터미널 명령이 실행됩니다!
+5. 이제 지원되는 웹 챗(ChatGPT, Claude, Gemini 등)에서 요청을 보내면 바로 로컬 파일 읽기/수정(`file:patch` 고속 패치)/생성 및 터미널 명령이 실행됩니다!
 
 ## ⌨️ 명령어 팔레트 (Command Palette) 기능
 VS Code에서 `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`)를 누른 뒤 **`AI Agent:`** (또는 `Gemini Agent:`)를 입력하면 다음 명령들을 바로 실행할 수 있습니다:
@@ -46,7 +46,7 @@ VS Code 설정(`Ctrl+,` / `Cmd+,`)에서 `Universal Web AI Agent`를 검색하�
 
 ## ⚡ 지원 도구 (Tool Commands)
 - `file:read`: 파일 읽기 (`{"path": "..."}`)
-- `file:edit`: 기존 파일의 특정 구문 고속 교체 (`target` -> `replacement`, 전체 재작성 없이 즉각 수정)
+- `file:patch`: 라인 번호 치환 또는 Unified Diff 기반 고속 부분 패치 (`line_start`/`line_end` 또는 `patch` diff, 전체 재작성 없이 즉각 수정)
 - `file:write`: 새 파일 쓰기 / 전체 생성 (`{"path": "...", "content": "..."}`)
 - `file:list`: 디렉토리 탐색 (`{"path": "."}`)
 - `npm:run`: NPM 스크립트 실행 (`{"script": "build"}`)

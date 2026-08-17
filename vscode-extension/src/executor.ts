@@ -13,7 +13,7 @@ interface ActiveExecution {
 
 function normalizeCommand(rawCommand: string): string {
   const c = (rawCommand || '').trim().toLowerCase();
-  if (['file:patch', 'file:edit', 'patch', 'edit', 'file_patch', 'file_edit', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
+  if (['file:patch', 'patch', 'file_patch', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
     return 'file:patch';
   }
   if (['file:read', 'read', 'file_read', 'read_file', 'file:cat', 'cat', 'file:get'].includes(c)) {

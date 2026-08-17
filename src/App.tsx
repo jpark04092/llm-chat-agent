@@ -368,7 +368,7 @@ ${result.error ? `Error:\n${result.error}` : ''}
     const isReadOnlyBlocked =
       approvalPolicy === 'read-only' &&
       toolCall &&
-      (toolCall.command === 'file:write' || toolCall.command === 'file:patch' || toolCall.command === 'file:edit' || toolCall.command === 'terminal:exec' || toolCall.command === 'npm:run');
+      (toolCall.command === 'file:write' || toolCall.command === 'file:patch' || toolCall.command === 'terminal:exec' || toolCall.command === 'npm:run');
 
     const newMsg: ChatMessage = {
       id: modelMsgId,

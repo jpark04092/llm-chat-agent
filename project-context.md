@@ -38,7 +38,7 @@
 interface ToolCallPayload {
   agent_action?: 'tool_call';
   id: string;
-  command: 'file:list' | 'file:read' | 'file:write' | 'file:edit' | 'npm:run' | 'terminal:exec';
+  command: 'file:list' | 'file:read' | 'file:write' | 'file:patch' | 'npm:run' | 'terminal:exec';
   args?: Record<string, any>;
 }
 
@@ -79,7 +79,7 @@ interface CustomSiteItem {
 ## Core Execution Flow
 1. **URL Evaluation (`evaluateUrlPermission()`)**: Verifies if the active page matches enabled presets or custom URL patterns. If not allowed, zero background work is performed.
 2. **HUD Injection (`createAgentHUD()`)**: Renders on allowed domains; stays disconnected until user clicks [연결] to protect against historical loop re-execution.
-3. **Agent Output Parsing**: Detects tool calls (`file:edit`, `file:read`, `terminal:exec`, etc.) from chat responses.
+3. **Agent Output Parsing**: Detects tool calls (`file:patch`, `file:read`, `terminal:exec`, etc.) from chat responses.
 4. **Execution over WebSocket (:9999)**: Dispatches tool payload to VS Code or Server according to `ApprovalPolicy`.
 5. **Loop Handshake:** Formatted `[Tool Execution Result]` is returned and injected into the web chat.
 

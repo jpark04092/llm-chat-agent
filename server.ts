@@ -164,7 +164,7 @@ function resolveWorkspaceUri(relativePath?: string): string {
 
 function normalizeCommand(rawCommand: string): string {
   const c = (rawCommand || '').trim().toLowerCase();
-  if (['file:patch', 'file:edit', 'patch', 'edit', 'file_patch', 'file_edit', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
+  if (['file:patch', 'patch', 'file_patch', 'file:diff', 'diff', 'file:modify', 'modify', 'file:replace', 'replace'].includes(c)) {
     return 'file:patch';
   }
   if (['file:read', 'read', 'file_read', 'read_file', 'file:cat', 'cat', 'file:get'].includes(c)) {
@@ -220,8 +220,7 @@ async function executeTool(call: ToolCallPayload): Promise<ToolResultPayload> {
         break;
       }
 
-      case 'file:patch':
-      case 'file:edit': {
+      case 'file:patch': {
         if (!args.path) throw new Error('Missing "path" argument');
         const targetPath = resolveWorkspaceUri(args.path);
 
@@ -802,14 +801,14 @@ When code editing, file reading, file listing, or terminal commands are needed, 
 {
   "agent_action": "tool_call",
   "id": "call_${Date.now()}",
-  "command": "<one of: file:read | file:edit | file:write | file:list | npm:run | terminal:exec>",
+  "command": "<one of: file:read | file:patch | file:write | file:list | npm:run | terminal:exec>",
   "args": { ... }
 }
 \`\`\`
 
 Available Tools:
 - file:read: {"path": "relative/path"} -> Inspect existing file content.
-- file:edit: {"path": "relative/path", "target": "exact string to replace", "replacement": "new replacement text", "replaceAll"?: false} -> HIGH PRIORITY FOR MODIFICATIONS: When modifying existing files, always read first with file:read, and then make targeted replacements with file:edit instead of rewriting whole files with file:write to eliminate latency.
+- file:patch: {"path": "relative/path", "line_start": number, "line_end": number, "replacement": "new replacement text"} or {"path": "relative/path", "patch": "@@ ... @@"} -> HIGH PRIORITY FOR MODIFICATIONS: When modifying existing files, always read first with file:read, and then apply line-based replacements or unified diffs with file:patch instead of rewriting whole files with file:write to eliminate latency.
 - file:write: {"path": "relative/path", "content": "..."} -> Use primarily for creating new files or full file replacements.
 - file:list: {"path": "relative/dir" or "."}
 - npm:run: {"script": "build" | "test" | "dev"}
@@ -821,7 +820,7 @@ Keep your explanations concise, professional, and directly state what you are go
       try {
         const contents = [
           { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-          { role: 'model', parts: [{ text: 'Agent mode initialized with high-speed file:edit and VS Code bridge.' }] },
+          { role: 'model', parts: [{ text: 'Agent mode initialized with high-speed file:patch and VS Code bridge.' }] },
           ...conversationHistory.map((m: any) => ({
             role: m.role === 'user' ? 'user' : 'model',
             parts: [{ text: m.content }],

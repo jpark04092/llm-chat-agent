@@ -49,13 +49,13 @@
 ### 3. Web AI 접속 및 코딩 시작:
 1. 허용 목록에 등록된 웹 챗(ChatGPT, Claude, Gemini, DeepSeek, 사내 LLM 등) 접속
 2. 우측 하단 플로팅 HUD에서 **[연결]** 버튼 클릭 (`VS Code 내장 서버 연결됨 (:9999)` 확인)
-3. **[부트스트랩 전송]** 클릭 후 "package.json 읽어줘", "src/App.tsx를 수정해줘(`file:edit` 고속 부분 패치)", 또는 "npm test 실행해줘" 등으로 자율 코딩 루프를 실행하세요!
+3. **[부트스트랩 전송]** 클릭 후 "package.json 읽어줘", "src/App.tsx를 수정해줘(`file:patch` 고속 부분 패치)", 또는 "npm test 실행해줘" 등으로 자율 코딩 루프를 실행하세요!
 
 ---
 
 ## ⚡ 지원 도구 (Tool Commands)
 - `file:read`: 파일 내용 읽기 (`{"path": "..."}`)
-- `file:edit`: **[강력 추천]** 기존 파일의 특정 텍스트를 고속으로 치환 수정 (`{"path": "...", "target": "...", "replacement": "..."}`) — 대용량 파일 수정 시 지연 시간 대폭 단축
+- `file:patch`: **[강력 추천]** 라인 번호 치환 또는 Unified Diff 기반 고속 부분 패치 (`{"path": "...", "line_start": 10, "line_end": 12, "replacement": "..."}` 또는 `{"path": "...", "patch": "@@ ... @@"}`) — 공백/줄바꿈 오차 방지 및 지연 시간 대폭 단축
 - `file:write`: 새 파일 생성 또는 전체 파일 덮어쓰기 (`{"path": "...", "content": "..."}`)
 - `file:list`: 디렉토리 파일 목록 조회 (`{"path": "."}`)
 - `npm:run`: package.json 스크립트 실행 (`{"script": "build"}`)

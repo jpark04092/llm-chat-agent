@@ -1,7 +1,7 @@
 export interface ToolCallPayload {
   agent_action?: 'tool_call';
   id: string;
-  command: 'file:read' | 'file:write' | 'file:patch' | 'file:edit' | 'file:list' | 'npm:run' | 'terminal:exec' | string;
+  command: 'file:read' | 'file:write' | 'file:patch' | 'file:list' | 'npm:run' | 'terminal:exec' | string;
   args?: Record<string, any>;
 }
 
